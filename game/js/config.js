@@ -34,4 +34,4 @@ export const gameConfig = {
 };
 
 // Set false for production
-export const DEBUG_DISABLE_LIMIT = false;
+export const DEBUG_DISABLE_LIMIT = true;

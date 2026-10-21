@@ -1,10 +1,8 @@
 // ============================================================
 // [FILE: core/js/render.js]
 // Canvas 2D отрисовка Pizza Catch.
-// Координаты — от фактических canvas.width/height (адаптивно).
-// Цвета — из CSS-переменных (game/css/theme.css).
-// Ингредиенты: если gameConfig.ASSETS.ingredients[id] задан и
-// картинка загрузилась — drawImage; иначе процедурная заглушка.
+// Лейны: вертикальный градиент (статичный, без паттерна) —
+// нейтральный фон, не конкурирует с движущимися объектами.
 // ============================================================
 
 import { config } from './config.js';
@@ -254,33 +252,23 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.restore();
   }
 
-  function drawConveyor(lx, isActive, conveyorOffset) {
+  // ----------------------------------------------------------
+  // Конвейер: вертикальный градиент. Без паттерна, без анимации.
+  // ----------------------------------------------------------
+  function drawConveyor(lx, isActive) {
     const halfW = laneWidth / 2;
     const left = lx - halfW;
     const width = laneWidth;
     const height = conveyorBottom - conveyorTop;
 
-    ctx.fillStyle = COLORS.conveyorBg;
+    const grad = ctx.createLinearGradient(left, conveyorTop, left, conveyorBottom);
+    grad.addColorStop(0, COLORS.conveyorBg);
+    grad.addColorStop(1, COLORS.conveyorBgBottom);
+
+    ctx.fillStyle = grad;
     ctx.fillRect(left, conveyorTop, width, height);
 
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(left, conveyorTop, width, height);
-    ctx.clip();
-
-    const stripeH = 12;
-    const gapH = 12;
-    const period = stripeH + gapH;
-    const offsetPx = conveyorOffset * period;
-
-    for (let y = conveyorTop - period + offsetPx;
-         y < conveyorBottom + period;
-         y += period) {
-      ctx.fillStyle = COLORS.conveyorStripe;
-      ctx.fillRect(left, y, width, stripeH);
-    }
-    ctx.restore();
-
+    // боковые границы
     ctx.strokeStyle = COLORS.conveyorBorder;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -288,18 +276,7 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.moveTo(left + width, conveyorTop); ctx.lineTo(left + width, conveyorBottom);
     ctx.stroke();
 
-    ctx.fillStyle = COLORS.conveyorArrow;
-    for (let y = conveyorTop + 20 + offsetPx;
-         y < conveyorBottom - 10;
-         y += 60) {
-      ctx.beginPath();
-      ctx.moveTo(lx - 8, y);
-      ctx.lineTo(lx + 8, y);
-      ctx.lineTo(lx, y + 12);
-      ctx.closePath();
-      ctx.fill();
-    }
-
+    // активный лейн
     if (isActive) {
       ctx.strokeStyle = COLORS.conveyorActive;
       ctx.lineWidth = 3;
@@ -385,14 +362,9 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.textBaseline = 'alphabetic';
   }
 
-  // ----------------------------------------------------------
-  // Верхняя панель: TIME / BEST (слева), рецепт (центр),
-  // SCORE / MISS / PIZZAS (справа).
-  // ----------------------------------------------------------
   function drawRecipe(state) {
     const { recipe, collected, score, misses, pizzasMade } = state;
 
-    // Фон верхней панели
     ctx.fillStyle = COLORS.recipeBg;
     ctx.fillRect(0, 0, W, recipeH + 20);
 
@@ -403,7 +375,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineTo(W, recipeH + 20);
     ctx.stroke();
 
-    // ---------- Слева: TIME / BEST ----------
     const timeLeftMs = getRemainingMs();
     const totalSec = Math.ceil(timeLeftMs / 1000);
     const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
@@ -417,7 +388,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fillText(`TIME ${mm}:${ss}`, 10, 18);
     ctx.fillText(`BEST ${best}`, 10, 36);
 
-    // ---------- Центр: рецепт ----------
     const len = recipe.length;
     const reservedLeft = 100;
     const reservedRight = 100;
@@ -464,7 +434,6 @@ export function createRenderer(canvas, callbacks = {}) {
       }
     }
 
-    // ---------- Справа: SCORE / MISS / PIZZAS ----------
     ctx.fillStyle = COLORS.scoreText;
     ctx.font = 'bold 14px monospace';
     ctx.textAlign = 'right';
@@ -555,9 +524,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fillText('тап по экрану — рестарт', W/2, H/2 + 50);
   }
 
-  // ----------------------------------------------------------
-  // Основной render
-  // ----------------------------------------------------------
   function render(state) {
     ctx.fillStyle = COLORS.bg;
     ctx.fillRect(0, 0, W, H);
@@ -567,8 +533,7 @@ export function createRenderer(canvas, callbacks = {}) {
     for (let l = 0; l < config.LANE_COUNT; l++) {
       drawConveyor(
         laneX[l],
-        l === state.currentPos && !state.over && !state.pizzaAnim,
-        state.conveyorOffset
+        l === state.currentPos && !state.over && !state.pizzaAnim
       );
     }
 

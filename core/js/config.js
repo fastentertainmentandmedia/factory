@@ -1,9 +1,6 @@
 // ============================================================
 // [FILE: core/js/config.js]
-// ВСЕ игровые константы Pizza Catch. Механика, баланс, физика,
-// пропорции поля, цвета (как имена CSS-переменных).
-// Меняется ТОЛЬКО при изменении самой игры (новый core).
-// Под заказчика (game/) ничего из этого не выносится.
+// ВСЕ игровые константы Pizza Catch.
 // ============================================================
 
 export const config = {
@@ -21,7 +18,7 @@ export const config = {
 
   ITEM_SIZE_RATIO:        0.085,
   RECIPE_ITEM_SIZE_RATIO: 0.065,
-  LANE_WIDTH_RATIO:       0.16,
+  LANE_WIDTH_RATIO:       0.20,
   TAP_RADIUS_RATIO:       0.13,
 
   WAIT_POS_X_RATIO: 0.50,
@@ -47,17 +44,16 @@ export const config = {
   // ----------------------------------------------------------
   // Скорость и спавн (FPS-независимо)
   // ----------------------------------------------------------
-  BASE_FALL_SPEED: 1.2 * 60,          // 72 пикс/сек при H=720
+  BASE_FALL_SPEED: 1.2 * 60,
   SPEED_PER_PIZZA: 0.20,
 
-  BASE_SPAWN_MIN_MS: 50 * (1000 / 60),   // ≈ 833 мс
-  BASE_SPAWN_MAX_MS: 90 * (1000 / 60),   // ≈ 1500 мс
+  BASE_SPAWN_MIN_MS: 50 * (1000 / 60),
+  BASE_SPAWN_MAX_MS: 90 * (1000 / 60),
   SPAWN_RATE_PER_PIZZA: 0.10,
-  MIN_SPAWN_INTERVAL_MS: 40 * (1000 / 60), // ≈ 667 мс
+  MIN_SPAWN_INTERVAL_MS: 40 * (1000 / 60),
 
   // ----------------------------------------------------------
   // Цвета — имена CSS-переменных + fallback.
-  // Значения живут в game/css/theme.css.
   // ----------------------------------------------------------
   COLORS: {
     bg:              { var: '--color-field-bg',        fallback: '#fafafa' },
@@ -70,12 +66,14 @@ export const config = {
     recipeCheckBg:   { var: '--color-recipe-check-bg', fallback: 'rgba(0,180,0,0.3)' },
     recipeArrow:     { var: '--color-recipe-arrow',    fallback: '#888888' },
 
-    conveyorBg:      { var: '--color-conveyor-bg',     fallback: '#d8d8d8' },
-    conveyorStripe:  { var: '--color-conveyor-stripe', fallback: '#a8a8a8' },
-    conveyorBorder:  { var: '--color-conveyor-border', fallback: '#888888' },
-    conveyorArrow:   { var: '--color-conveyor-arrow',  fallback: 'rgba(80,80,80,0.4)' },
-    conveyorActive:  { var: '--color-conveyor-active', fallback: 'rgba(255,200,0,0.8)' },
-    conveyorActiveBg:{ var: '--color-conveyor-active-bg', fallback: 'rgba(255,220,100,0.35)' },
+    // Лейн: градиент от conveyorBg (верх) к conveyorBgBottom (низ).
+    conveyorBg:       { var: '--color-conveyor-bg',        fallback: '#d8d8d8' },
+    conveyorBgBottom: { var: '--color-conveyor-bg-bottom', fallback: '#c4c4c4' },
+    conveyorStripe:   { var: '--color-conveyor-stripe',    fallback: '#a8a8a8' },
+    conveyorBorder:   { var: '--color-conveyor-border',    fallback: '#888888' },
+    conveyorArrow:    { var: '--color-conveyor-arrow',     fallback: 'rgba(80,80,80,0.4)' },
+    conveyorActive:   { var: '--color-conveyor-active',    fallback: 'rgba(255,200,0,0.8)' },
+    conveyorActiveBg: { var: '--color-conveyor-active-bg', fallback: 'rgba(255,220,100,0.35)' },
 
     bowlBody:        { var: '--color-bowl-body',       fallback: '#d8d8d8' },
     bowlRim:         { var: '--color-bowl-rim',        fallback: '#e8e8e8' },
@@ -96,6 +94,8 @@ export const config = {
     missesDanger:    { var: '--color-misses-danger',   fallback: '#cc0000' },
     pizzasText:      { var: '--color-pizzas-text',     fallback: '#888888' },
 
+    bottomBar:       { var: '--color-bottom-bar',      fallback: '#dddddd' },
+    bottomBarBorder: { var: '--color-bottom-bar-br',   fallback: '#000000' },
 
     pizzaGlow:       { var: '--color-pizza-glow',      fallback: 'rgba(255,240,200,0.7)' },
     pizzaBase:       { var: '--color-pizza-base',      fallback: '#e0b070' },

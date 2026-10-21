@@ -1,14 +1,8 @@
 /* ============================================================
    [FILE: game/css/theme.css]
-   Вся стилистика Pizza Catch: цвета, тени, шрифты.
-   Структура приходит из core/css/*.
-   render.js читает цвета через getComputedStyle по именам --color-*.
+   Вся стилистика Pizza Catch.
    ============================================================ */
 
-
-/* ============================================================
-   [BLOCK: tokens]
-   ============================================================ */
 :root {
 
   /* ---------- Поле и каркас ---------- */
@@ -23,7 +17,7 @@
   --color-text-warm:      #222222;
   --color-text-accent:    #000000;
 
-  /* ---------- Рецепт (верхняя зона) ---------- */
+  /* ---------- Рецепт ---------- */
   --color-recipe-bg:      #f0f0f0;
   --color-recipe-border:  #000000;
   --color-recipe-text:    #000000;
@@ -33,12 +27,11 @@
   --color-recipe-check-bg: rgba(0, 180, 0, 0.3);
   --color-recipe-arrow:   #888888;
 
-  /* ---------- Конвейер ---------- */
-  --color-conveyor-bg:      #d8d8d8;
-  --color-conveyor-stripe:  #a8a8a8;
-  --color-conveyor-border:  #888888;
-  --color-conveyor-arrow:   rgba(80, 80, 80, 0.4);
-  --color-conveyor-active:  rgba(255, 200, 0, 0.8);
+  /* ---------- Конвейер: вертикальный градиент ---------- */
+  --color-conveyor-bg:        #d8d8d8;   /* верх */
+  --color-conveyor-bg-bottom: #c4c4c4;   /* низ */
+  --color-conveyor-border:    #a0a0a0;
+  --color-conveyor-active:    rgba(255, 200, 0, 0.8);
   --color-conveyor-active-bg: rgba(255, 220, 100, 0.35);
 
   /* ---------- Чаша ---------- */
@@ -107,7 +100,7 @@
   --font-mono: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
   /* ---------- Раскладка поля ---------- */
-  --field-aspect: 0.7222;   /* 520 / 720 */
+  --field-aspect: 0.7222;
 }
 
 
@@ -120,18 +113,10 @@ body {
   color: var(--color-text-main);
 }
 
-
-/* ============================================================
-   [BLOCK: focus]
-   ============================================================ */
 :focus-visible {
   outline-color: var(--color-panel-border);
 }
 
-
-/* ============================================================
-   [BLOCK: game-wrapper]
-   ============================================================ */
 .game-wrapper {
   background-image: linear-gradient(
     135deg,
@@ -140,10 +125,6 @@ body {
   );
 }
 
-
-/* ============================================================
-   [BLOCK: header]
-   ============================================================ */
 .header {
   color: var(--color-text-main);
 }

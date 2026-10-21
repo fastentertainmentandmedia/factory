@@ -19,11 +19,11 @@ export const config = {
   ITEM_SIZE_RATIO:        0.085,
   RECIPE_ITEM_SIZE_RATIO: 0.065,
   LANE_WIDTH_RATIO:       0.20,
-  TAP_RADIUS_RATIO:       0.13,
+  TAP_RADIUS_RATIO:       0.12,
 
   WAIT_POS_X_RATIO: 0.50,
   WAIT_POS_Y_RATIO: 0.92,
-  MARKERS_OFFSET_RATIO: 0.07,
+  MARKERS_OFFSET_RATIO: 0.08,
 
   // ----------------------------------------------------------
   // Правила

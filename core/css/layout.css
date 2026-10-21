@@ -32,6 +32,7 @@
 
   width: 100%;
   min-height: var(--header-h);
+  height: var(--header-h);    /* ← фиксируем, чтобы flex-центр работал */
 
   padding: 0 var(--safe-pad);
 }
@@ -52,7 +53,7 @@
   display: block;
 
   max-width: 100%;
-  max-height: var(--header-h);
+  max-height: 100%;          /* ← не var(--header-h), а 100% контейнера */
 
   width: auto;
   height: auto;

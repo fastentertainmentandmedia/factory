@@ -46,8 +46,6 @@ export const config = {
 
   BOWL_FLASH_MS: 260,
 
-  // После сборки пиццы (когда рецепт сменён) возвращать чашу
-  // в нейтральное положение (позиция 3 — «ожидание»).
   RESET_POSITION_AFTER_PIZZA: true,
 
   // ----------------------------------------------------------
@@ -148,6 +146,12 @@ export const config = {
       { id: 'chick',  colorVar: '--color-ing-chick',  borderVar: '--color-ing-chick-br',  fallback: { color: '#f0d0b0', border: '#a09070' } },
       { id: 'ham',    colorVar: '--color-ing-ham',    borderVar: '--color-ing-ham-br',    fallback: { color: '#f0a0a0', border: '#a06060' } },
       { id: 'spin',   colorVar: '--color-ing-spin',   borderVar: '--color-ing-spin-br',   fallback: { color: '#30a030', border: '#106010' } },
+
+      // Новые ингредиенты (SVG из game/assets/ingredients/)
+      { id: 'egg',    colorVar: '--color-ing-egg',    borderVar: '--color-ing-egg-br',    fallback: { color: '#fff6d6', border: '#e0c060' } },
+      { id: 'pork',   colorVar: '--color-ing-pork',   borderVar: '--color-ing-pork-br',   fallback: { color: '#f0a0a0', border: '#c06060' } },
+      { id: 'cabbage', colorVar: '--color-ing-cabbage', borderVar: '--color-ing-cabbage-br', fallback: { color: '#8fd07a', border: '#4a8a3a' } },
+      { id: 'chilli',  colorVar: '--color-ing-chilli',  borderVar: '--color-ing-chilli-br',  fallback: { color: '#e03030', border: '#801818' } },
     ],
     badIngredient: {
       id: 'bad',

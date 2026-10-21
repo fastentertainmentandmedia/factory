@@ -1,13 +1,13 @@
 // ============================================================
 // [FILE: core/js/render.js]
 // Canvas 2D отрисовка Pizza Catch.
-// HUD: таймер/промахи/рекорд/счёт — стиль из theme.css (--font-mono).
-// Таймер меняет цвет/размер по мере истечения (пороги от лимита).
+// Процедурные пиктограммы ингредиентов — в ingredient-drawers.js.
 // ============================================================
 
 import { config } from './config.js';
 import { gameConfig } from '../../game/js/config.js';
 import { getBestScore, getRemainingMs } from './player-limits.js';
+import { drawProceduralIngredient } from './ingredient-drawers.js';
 
 
 function readColor(el, spec) {
@@ -51,7 +51,7 @@ export function createRenderer(canvas, callbacks = {}) {
   let HUD_FONT = 'monospace';
 
   // ----------------------------------------------------------
-  // SVG/PNG ингредиентов (опционально)
+  // SVG/PNG ингредиентов
   // ----------------------------------------------------------
   const ING_IMAGES = {};
   const ING_IMAGES_READY = {};
@@ -70,6 +70,10 @@ export function createRenderer(canvas, callbacks = {}) {
       ING_IMAGES[id] = img;
     }
   })();
+
+  function hasSvgFor(id) {
+    return !!(ING_IMAGES[id] && ING_IMAGES_READY[id]);
+  }
 
   // ----------------------------------------------------------
   // Цвета + шрифт
@@ -148,9 +152,14 @@ export function createRenderer(canvas, callbacks = {}) {
   // Ингредиент
   // ----------------------------------------------------------
   function drawIngredient(cx, cy, ingr, size) {
-    if (ingr && ING_IMAGES[ingr.id] && ING_IMAGES_READY[ingr.id]) {
+    if (ingr && hasSvgFor(ingr.id)) {
       const img = ING_IMAGES[ingr.id];
-      ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
+      const iw = img.naturalWidth  || size;
+      const ih = img.naturalHeight || size;
+      const scale = Math.min(size / iw, size / ih);
+      const dw = iw * scale;
+      const dh = ih * scale;
+      ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
       return;
     }
 
@@ -160,11 +169,13 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.save();
     ctx.translate(cx, cy);
 
+    // тень
     ctx.beginPath();
     ctx.arc(2, 2, r, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0,0,0,0.15)';
     ctx.fill();
 
+    // базовая окружность (для процедурных — она же фон)
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fillStyle = c.color;
@@ -173,95 +184,8 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    if (ingr.id === 'dough') {
-      ctx.fillStyle = 'rgba(160,112,64,0.5)';
-      ctx.beginPath(); ctx.arc(-r*0.3, -r*0.2, r*0.15, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(r*0.2, r*0.3, r*0.12, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'tomato') {
-      ctx.fillStyle = '#50a050';
-      ctx.beginPath();
-      ctx.ellipse(0, -r*0.7, r*0.3, r*0.15, 0, 0, Math.PI*2);
-      ctx.fill();
-    } else if (ingr.id === 'cheese') {
-      ctx.fillStyle = 'rgba(180,144,32,0.7)';
-      ctx.beginPath(); ctx.arc(-r*0.25, -r*0.1, r*0.12, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(r*0.3, r*0.15, r*0.1, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'pep') {
-      ctx.fillStyle = 'rgba(80,20,10,0.5)';
-      ctx.beginPath(); ctx.arc(-r*0.2, -r*0.2, r*0.15, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(r*0.2, r*0.2, r*0.13, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'herb') {
-      ctx.strokeStyle = '#206020';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(-r*0.4, 0); ctx.lineTo(r*0.4, 0); ctx.stroke();
-    } else if (ingr.id === 'mush') {
-      ctx.fillStyle = '#806040';
-      ctx.beginPath();
-      ctx.ellipse(0, -r*0.3, r*0.6, r*0.3, 0, Math.PI, 0);
-      ctx.fill();
-    } else if (ingr.id === 'olive') {
-      ctx.fillStyle = '#a0a0a0';
-      ctx.beginPath(); ctx.arc(0, 0, r*0.25, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'bacon') {
-      ctx.strokeStyle = '#f0a080';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-r*0.5, -r*0.3); ctx.lineTo(r*0.3, -r*0.1);
-      ctx.moveTo(-r*0.3, r*0.1);  ctx.lineTo(r*0.5, r*0.3);
-      ctx.stroke();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(-r*0.1, -r*0.2, r*0.1, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'pepper') {
-      ctx.strokeStyle = '#c05010';
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.arc(0, 0, r*0.5, 0, Math.PI*2); ctx.stroke();
-      ctx.fillStyle = '#f0c040';
-      ctx.beginPath(); ctx.arc(0, 0, r*0.2, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'onion') {
-      ctx.strokeStyle = '#c0a0d0';
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(0, 0, r*0.6, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, 0, r*0.4, 0, Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0, 0, r*0.2, 0, Math.PI*2); ctx.stroke();
-    } else if (ingr.id === 'pine') {
-      ctx.strokeStyle = '#c0b020';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-r*0.4, -r*0.4); ctx.lineTo(r*0.4, r*0.4);
-      ctx.moveTo(r*0.4, -r*0.4);  ctx.lineTo(-r*0.4, r*0.4);
-      ctx.stroke();
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(0, 0, r*0.12, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'chick') {
-      ctx.strokeStyle = '#d0a080';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-r*0.5, -r*0.2); ctx.lineTo(r*0.5, -r*0.3);
-      ctx.moveTo(-r*0.5, 0);      ctx.lineTo(r*0.5, -r*0.1);
-      ctx.moveTo(-r*0.5, r*0.2);  ctx.lineTo(r*0.5, r*0.1);
-      ctx.stroke();
-    } else if (ingr.id === 'ham') {
-      ctx.fillStyle = 'rgba(255,200,200,0.7)';
-      ctx.beginPath(); ctx.arc(-r*0.2, -r*0.2, r*0.15, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(r*0.3, r*0.2, r*0.12, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(r*0.1, -r*0.4, r*0.1, 0, Math.PI*2); ctx.fill();
-    } else if (ingr.id === 'spin') {
-      ctx.fillStyle = '#208020';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, r*0.5, r*0.25, 0.5, 0, Math.PI*2);
-      ctx.fill();
-      ctx.strokeStyle = '#105010';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(-r*0.4, -r*0.15); ctx.lineTo(r*0.4, r*0.15); ctx.stroke();
-    } else if (ingr.id === 'bad') {
-      ctx.strokeStyle = '#400';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-r*0.5, -r*0.5); ctx.lineTo(r*0.5, r*0.5);
-      ctx.moveTo(r*0.5, -r*0.5);  ctx.lineTo(-r*0.5, r*0.5);
-      ctx.stroke();
-    }
+    // пиктограмма поверх (или дефолтный круг, если id неизвестен)
+    drawProceduralIngredient(ctx, r, ingr, c);
 
     ctx.restore();
   }
@@ -396,19 +320,16 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Верхняя панель: без разделительной линии между строками.
-  // Таймер меняет цвет/размер по мере истечения (ratio от лимита).
+  // Верхняя панель
   // ----------------------------------------------------------
   function drawRecipe(state) {
     const { recipe, collected, score, misses } = state;
 
     const panelH = hudTopH + hudRecipeH + 8;
 
-    // фон панели
     ctx.fillStyle = COLORS.recipeBg;
     ctx.fillRect(0, 0, W, panelH);
 
-    // нижняя граница панели (с лентами)
     ctx.strokeStyle = COLORS.recipeBorder;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -418,9 +339,6 @@ export function createRenderer(canvas, callbacks = {}) {
 
     const topCenterY = recipeY / 2;
 
-    // ==========================================================
-    // ВЕРХНЯЯ СТРОКА: таймер / промахи (слева), рекорд / счёт (справа)
-    // ==========================================================
     const timeLeftMs = getRemainingMs();
     const limitMs = Math.max(1, gameConfig.PLAY_LIMIT_MINUTES * 60 * 1000);
     const ratio = timeLeftMs / limitMs;
@@ -447,11 +365,9 @@ export function createRenderer(canvas, callbacks = {}) {
     const ss = String(totalSec % 60).padStart(2, '0');
     const timerText = `${mm}:${ss}`;
 
-    // ---------- СЛЕВА ----------
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
-    // Таймер
     ctx.save();
     if (timerPulse) {
       ctx.globalAlpha = 0.65 + 0.35 * Math.sin(performance.now() / 300);
@@ -461,17 +377,14 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fillText(timerText, hudPadding, topCenterY);
     ctx.restore();
 
-    const timerW = ctx.measureText
-      ? measureWithFont(timerText, `bold ${timerSize}px ${HUD_FONT}`)
-      : 0;
+    const timerW = measureWithFont(timerText, `bold ${timerSize}px ${HUD_FONT}`);
 
-    // Промахи: подпись + значение
     const missesLabel = 'ПРОМАХИ';
     const missesValue = `${misses}/${config.MAX_MISSES}`;
     const missesDanger = misses >= config.MAX_MISSES - 1;
 
-    const labelSize = 14;
-    const valueSize = 14;
+    const labelSize = 13;
+    const valueSize = 15;
 
     let mx = hudPadding + timerW + 16;
 
@@ -486,30 +399,26 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.font = `bold ${valueSize}px ${HUD_FONT}`;
     ctx.fillText(missesValue, mx, topCenterY);
 
-    // ---------- СПРАВА ----------
     const best = getBestScore();
 
     ctx.textAlign = 'right';
 
-    // Счёт: значение
-    const scoreValueSize = 14;
+    const scoreValueSize = 18;
     ctx.fillStyle = COLORS.hudValue;
     ctx.font = `bold ${scoreValueSize}px ${HUD_FONT}`;
     ctx.fillText(`${score}`, W - hudPadding, topCenterY);
     const scoreW = measureWithFont(`${score}`, `bold ${scoreValueSize}px ${HUD_FONT}`);
 
-    // Счёт: подпись
     const scoreLabel = 'СЧЁТ';
-    const scoreLabelSize = 14;
+    const scoreLabelSize = 13;
     ctx.fillStyle = COLORS.hudLabel;
     ctx.font = `bold ${scoreLabelSize}px ${HUD_FONT}`;
     ctx.fillText(scoreLabel, W - hudPadding - scoreW - 6, topCenterY);
     const scoreLabelW = measureWithFont(scoreLabel, `bold ${scoreLabelSize}px ${HUD_FONT}`);
 
-    // Рекорд: подпись + значение (левее счёта)
     const bestLabel = 'РЕКОРД';
     const bestValue = `${best}`;
-    const bestLabelSize = 14;
+    const bestLabelSize = 12;
     const bestValueSize = 14;
 
     const bestBlockRight = W - hudPadding - scoreW - 6 - scoreLabelW - 16;
@@ -526,9 +435,7 @@ export function createRenderer(canvas, callbacks = {}) {
 
     ctx.textBaseline = 'alphabetic';
 
-    // ==========================================================
-    // НИЖНЯЯ СТРОКА: ингредиенты рецепта
-    // ==========================================================
+    // НИЖНЯЯ СТРОКА: рецепт
     const len = recipe.length;
     const leftBound  = hudPadding;
     const rightBound = W - hudPadding;
@@ -544,13 +451,17 @@ export function createRenderer(canvas, callbacks = {}) {
       const ingr = ALL_INGR_BY_ID(id);
       const ix = startX + i * gap;
 
-      ctx.beginPath();
-      ctx.arc(ix, iconY, iconSize/2 + 2, 0, Math.PI * 2);
-      ctx.fillStyle = COLORS.recipeIconBg;
-      ctx.fill();
-      ctx.strokeStyle = COLORS.recipeIconBorder;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      const hasSvg = hasSvgFor(ingr.id);
+
+      if (!hasSvg) {
+        ctx.beginPath();
+        ctx.arc(ix, iconY, iconSize/2 + 2, 0, Math.PI * 2);
+        ctx.fillStyle = COLORS.recipeIconBg;
+        ctx.fill();
+        ctx.strokeStyle = COLORS.recipeIconBorder;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
 
       drawIngredient(ix, iconY, ingr, iconSize);
 

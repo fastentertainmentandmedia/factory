@@ -29,10 +29,6 @@ import { createRenderer } from './render.js';
 import { createTapZones } from './controls/tap-zones.js';
 
 
-// ============================================================
-// [BLOCK: disable-double-tap-zoom]
-// ============================================================
-
 let lastTouchEnd = 0;
 document.addEventListener('touchend', (event) => {
   const now = Date.now();
@@ -41,17 +37,13 @@ document.addEventListener('touchend', (event) => {
 }, { passive: false });
 
 
-// ============================================================
-// [BLOCK: preloader]
-// ============================================================
-
 function hidePreloader() {
   document.documentElement.classList.add('ready');
 }
 
 
 // ============================================================
-// [BLOCK: goatcounter]
+// goatcounter
 // ============================================================
 
 (function loadGoatCounter() {
@@ -74,7 +66,7 @@ function hidePreloader() {
 
 
 // ============================================================
-// [BLOCK: metrika]
+// metrika
 // ============================================================
 
 (function loadMetrika() {
@@ -117,15 +109,11 @@ function hidePreloader() {
 })();
 
 
-// ============================================================
-// [BLOCK: session-counter]
-// ============================================================
-
 let gamesThisSession = 0;
 
 
 // ============================================================
-// [BLOCK: init]
+// init
 // ============================================================
 
 initPlayer();
@@ -146,68 +134,75 @@ const renderer = createRenderer($.canvas, {
   onImageReady: () => game && game.render(),
 });
 
-rules.setFieldSize($.canvas.width, $.canvas.height);
+rules.setFieldSize($.canvas.clientWidth || 520, $.canvas.clientHeight || 720);
 
+// Хелпер: снять snapshot из rules и залить нужные поля в state.
+function syncStateFromRules(extraPatch) {
+  const snap = rules.getState();
+  updateState({
+    score: snap.score,
+    misses: snap.misses,
+    pizzasMade: snap.pizzasMade,
+    ...(extraPatch || {}),
+  }, ui);
+}
 
 const game = createLoop({
   rules,
   renderer,
   config,
   callbacks: {
-    onScore: score => updateState({ score }, ui),
+    onScore: (score) => {
+      // score приходит из loop, но misses/pizzasMade — из rules.
+      syncStateFromRules({ score });
+    },
 
     onStart: () => {
       gamesThisSession++;
-
       trackGoal('game_start', { number: gamesThisSession });
-
-      updateState({
+      syncStateFromRules({
         gameStarted: true,
         gameActive: true,
         gameOver: false,
         hintVisible: false,
-      }, ui);
+      });
     },
 
     onGameOver: ({ win, score }) => {
       const isNewRecord = updateBestScore(score);
-
       trackGoal('game_over', {
         score,
         win: win ? 1 : 0,
         number: gamesThisSession,
       });
-
-      updateState({
+      syncStateFromRules({
         gameActive: false,
         gameStarted: true,
         gameOver: true,
         win: !!win,
         ...(isNewRecord ? { bestScore: score } : {}),
-      }, ui);
+      });
     },
 
     onLimit: ({ score = 0 } = {}) => {
       const isNewRecord = score > 0 && updateBestScore(score);
-
       trackGoal('daily_limit_reached', {
         score,
         number: gamesThisSession,
       });
-
-      updateState({
+      syncStateFromRules({
         limitReached: true,
         hintVisible: true,
         hintKind: 'limit',
         ...(isNewRecord ? { bestScore: score } : {}),
-      }, ui);
+      });
     },
   },
 });
 
 
 // ============================================================
-// [BLOCK: tap-zones]
+// tap-zones
 // ============================================================
 
 const tapZones = createTapZones($.canvas, {
@@ -216,17 +211,21 @@ const tapZones = createTapZones($.canvas, {
   onPosition: (pos) => {
     if (!state.gameUnlocked) return;
     if (state.limitReached) return;
-
     if (state.gameOver) return;
     if (!state.gameStarted) return;
 
     game.setPosition(pos);
+
+    // setPosition мог изменить misses (немедленный захват / gameover).
+    // Синхронизируем state с rules, чтобы HUD обновился.
+    if (state.gameActive) {
+      syncStateFromRules();
+    }
   },
 
   onTapOutside: () => {
     if (!state.gameUnlocked) return;
     if (state.limitReached) return;
-
     if (state.gameOver || !state.gameStarted) {
       startNewGame();
     }
@@ -234,35 +233,33 @@ const tapZones = createTapZones($.canvas, {
 });
 
 
-// ============================================================
-// [BLOCK: startNewGame]
-// ============================================================
-
 function startNewGame() {
   if (state.gameActive) flushSession();
   resetGameState();
-  state.score = 0;
   ui.render();
   game.init();
+  // После init — синхронизируем misses/score (0).
+  syncStateFromRules();
 }
 
 
 // ============================================================
-// [BLOCK: resize]
+// resize
 // ============================================================
 
 createResize({
   canvas: $.canvas,
-  onResize: (w, h) => {
+  onResize: (w, h, dpr) => {
     rules.setFieldSize(w, h);
-    renderer.resize(w, h);
+    renderer.resize(w, h, dpr);
+    ui.setHudFontSize(h);
     game.render();
   },
 });
 
 
 // ============================================================
-// [BLOCK: unlock]
+// unlock
 // ============================================================
 
 function unlockGame() {
@@ -290,9 +287,11 @@ function unlockGame() {
       gameActive: false,
       gameOver: false,
     }, ui);
+    syncStateFromRules();
   }
 
   ui.render();
+  ui.updateTimer();
 }
 
 
@@ -303,9 +302,7 @@ intro.init();
 
 
 // ============================================================
-// [BLOCK: session-tick]
-// Раз в секунду начисляем потраченное время (для лимита).
-// Таймер на canvas читает getRemainingMs() на каждом кадре.
+// session-tick
 // ============================================================
 
 setInterval(() => {
@@ -320,11 +317,12 @@ setInterval(() => {
   }
 
   game.tickSession();
+  ui.updateTimer();
 }, 1000);
 
 
 // ============================================================
-// [BLOCK: lifecycle]
+// lifecycle
 // ============================================================
 
 createLifecycle({
@@ -338,14 +336,14 @@ createLifecycle({
 
 
 // ============================================================
-// [BLOCK: contextmenu]
+// contextmenu
 // ============================================================
 
 $.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
 
 // ============================================================
-// [BLOCK: debug-reset-limit]
+// debug-reset-limit
 // ============================================================
 
 (function debugResetLimit() {

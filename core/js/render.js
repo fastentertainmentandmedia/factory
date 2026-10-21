@@ -1,12 +1,13 @@
 // ============================================================
 // [FILE: core/js/render.js]
 // Canvas 2D отрисовка Pizza Catch.
-// Процедурные пиктограммы ингредиентов — в ingredient-drawers.js.
+// HUD-тексты (таймер/промахи/рекорд/счёт) — в DOM (ui.js).
+// На canvas остаётся: фон панели, рецепт (иконки + стрелки),
+// лейны, ингредиенты, чаша, зоны, оверлеи.
 // ============================================================
 
 import { config } from './config.js';
 import { gameConfig } from '../../game/js/config.js';
-import { getBestScore, getRemainingMs } from './player-limits.js';
 import { drawProceduralIngredient } from './ingredient-drawers.js';
 
 
@@ -24,11 +25,11 @@ function readIngredientColors(style, spec) {
 
 export function createRenderer(canvas, callbacks = {}) {
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   const onImageReady = callbacks.onImageReady ?? (() => {});
 
-  let W = canvas.width  || 520;
-  let H = canvas.height || 720;
+  let W = canvas.clientWidth  || 520;
+  let H = canvas.clientHeight || 720;
 
   let laneX = [];
   let hudTopH = 0;
@@ -129,11 +130,12 @@ export function createRenderer(canvas, callbacks = {}) {
     markersY = conveyorBottom + config.MARKERS_OFFSET_RATIO * H;
   }
 
-  function resize(w, h) {
-    canvas.width = w;
-    canvas.height = h;
-    W = w;
-    H = h;
+  // cssW, cssH — ЛОГИЧЕСКИЕ размеры. dpr — pixel ratio.
+  // canvas.width/height УЖЕ выставлены resize.js (cssW*dpr).
+  function resize(cssW, cssH, dpr = 1) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = cssW;
+    H = cssH;
     recomputeGeometry();
     refreshColors();
     onImageReady();
@@ -169,13 +171,11 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.save();
     ctx.translate(cx, cy);
 
-    // тень
     ctx.beginPath();
     ctx.arc(2, 2, r, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(0,0,0,0.15)';
     ctx.fill();
 
-    // базовая окружность (для процедурных — она же фон)
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fillStyle = c.color;
@@ -184,7 +184,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // пиктограмма поверх (или дефолтный круг, если id неизвестен)
     drawProceduralIngredient(ctx, r, ingr, c);
 
     ctx.restore();
@@ -320,10 +319,10 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Верхняя панель
+  // Верхняя панель: фон + рецепт (иконки). Без текстов.
   // ----------------------------------------------------------
   function drawRecipe(state) {
-    const { recipe, collected, score, misses } = state;
+    const { recipe, collected } = state;
 
     const panelH = hudTopH + hudRecipeH + 8;
 
@@ -336,104 +335,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.moveTo(0, panelH);
     ctx.lineTo(W, panelH);
     ctx.stroke();
-
-    const topCenterY = recipeY / 2;
-
-    const timeLeftMs = getRemainingMs();
-    const limitMs = Math.max(1, gameConfig.PLAY_LIMIT_MINUTES * 60 * 1000);
-    const ratio = timeLeftMs / limitMs;
-
-    let timerColor = COLORS.timerNormal;
-    let timerSize = 20;
-    let timerPulse = false;
-
-    if (ratio <= config.TIMER_CRITICAL_RATIO) {
-      timerColor = COLORS.timerDanger;
-      timerSize = 24;
-      timerPulse = true;
-    } else if (ratio <= config.TIMER_DANGER_RATIO) {
-      timerColor = COLORS.timerDanger;
-      timerSize = 22;
-      timerPulse = true;
-    } else if (ratio <= config.TIMER_WARN_RATIO) {
-      timerColor = COLORS.timerWarning;
-      timerSize = 21;
-    }
-
-    const totalSec = Math.ceil(timeLeftMs / 1000);
-    const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
-    const ss = String(totalSec % 60).padStart(2, '0');
-    const timerText = `${mm}:${ss}`;
-
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
-    ctx.save();
-    if (timerPulse) {
-      ctx.globalAlpha = 0.65 + 0.35 * Math.sin(performance.now() / 300);
-    }
-    ctx.fillStyle = timerColor;
-    ctx.font = `bold ${timerSize}px ${HUD_FONT}`;
-    ctx.fillText(timerText, hudPadding, topCenterY);
-    ctx.restore();
-
-    const timerW = measureWithFont(timerText, `bold ${timerSize}px ${HUD_FONT}`);
-
-    const missesLabel = 'ПРОМАХИ';
-    const missesValue = `${misses}/${config.MAX_MISSES}`;
-    const missesDanger = misses >= config.MAX_MISSES - 1;
-
-    const labelSize = 13;
-    const valueSize = 15;
-
-    let mx = hudPadding + timerW + 16;
-
-    ctx.fillStyle = COLORS.hudLabel;
-    ctx.font = `bold ${labelSize}px ${HUD_FONT}`;
-    ctx.fillText(missesLabel, mx, topCenterY);
-
-    const missesLabelW = measureWithFont(missesLabel, `bold ${labelSize}px ${HUD_FONT}`);
-    mx += missesLabelW + 6;
-
-    ctx.fillStyle = missesDanger ? COLORS.missesDanger : COLORS.hudValue;
-    ctx.font = `bold ${valueSize}px ${HUD_FONT}`;
-    ctx.fillText(missesValue, mx, topCenterY);
-
-    const best = getBestScore();
-
-    ctx.textAlign = 'right';
-
-    const scoreValueSize = 18;
-    ctx.fillStyle = COLORS.hudValue;
-    ctx.font = `bold ${scoreValueSize}px ${HUD_FONT}`;
-    ctx.fillText(`${score}`, W - hudPadding, topCenterY);
-    const scoreW = measureWithFont(`${score}`, `bold ${scoreValueSize}px ${HUD_FONT}`);
-
-    const scoreLabel = 'СЧЁТ';
-    const scoreLabelSize = 13;
-    ctx.fillStyle = COLORS.hudLabel;
-    ctx.font = `bold ${scoreLabelSize}px ${HUD_FONT}`;
-    ctx.fillText(scoreLabel, W - hudPadding - scoreW - 6, topCenterY);
-    const scoreLabelW = measureWithFont(scoreLabel, `bold ${scoreLabelSize}px ${HUD_FONT}`);
-
-    const bestLabel = 'РЕКОРД';
-    const bestValue = `${best}`;
-    const bestLabelSize = 12;
-    const bestValueSize = 14;
-
-    const bestBlockRight = W - hudPadding - scoreW - 6 - scoreLabelW - 16;
-
-    ctx.textAlign = 'right';
-    ctx.fillStyle = COLORS.hudValue;
-    ctx.font = `bold ${bestValueSize}px ${HUD_FONT}`;
-    ctx.fillText(bestValue, bestBlockRight, topCenterY);
-    const bestValueW = measureWithFont(bestValue, `bold ${bestValueSize}px ${HUD_FONT}`);
-
-    ctx.fillStyle = COLORS.hudLabel;
-    ctx.font = `bold ${bestLabelSize}px ${HUD_FONT}`;
-    ctx.fillText(bestLabel, bestBlockRight - bestValueW - 6, topCenterY);
-
-    ctx.textBaseline = 'alphabetic';
 
     // НИЖНЯЯ СТРОКА: рецепт
     const len = recipe.length;
@@ -601,13 +502,6 @@ export function createRenderer(canvas, callbacks = {}) {
     }
     drawBowl(dishX, dishY, state.bowlFlash);
 
-    if (state.currentPos === 3) {
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.font = `bold 12px ${HUD_FONT}`;
-      ctx.textAlign = 'center';
-      ctx.fillText('ОЖИДАНИЕ', dishX, dishY + 55);
-    }
-
     if (state.pizzaAnim) drawPizzaAnim(state.pizzaAnim);
     if (state.over) drawGameOver(state);
   }
@@ -615,14 +509,6 @@ export function createRenderer(canvas, callbacks = {}) {
   // ----------------------------------------------------------
   // Утилиты
   // ----------------------------------------------------------
-  function measureWithFont(text, font) {
-    const prev = ctx.font;
-    ctx.font = font;
-    const w = ctx.measureText(text).width;
-    ctx.font = prev;
-    return w;
-  }
-
   function withAlpha(color, a) {
     const c = parseColor(color);
     if (!c) return color;

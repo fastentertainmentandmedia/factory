@@ -11,9 +11,6 @@
   <link rel="apple-touch-icon" sizes="180x180" href="game/assets/favicon/apple-touch-icon.png">
 
   <style>
-  /* ============================================================
-     [BLOCK: preloader]
-     ============================================================ */
   html { visibility: hidden; }
   html.ready { visibility: visible; }
 
@@ -53,20 +50,14 @@
   }
   </style>
 
-  <!-- Core -->
   <link rel="stylesheet" href="core/css/base.css">
   <link rel="stylesheet" href="core/css/layout.css">
   <link rel="stylesheet" href="core/css/overlays.css">
 
-  <!-- Game -->
   <link rel="stylesheet" href="game/css/theme.css">
-
 </head>
 <body>
 
-  <!-- ============================================================
-       PRELOADER
-       ============================================================ -->
   <div id="preloader">
     <img class="preloader-logo" src="game/assets/logo.svg" alt="Pizza Catch">
     <div class="preloader-text">Загрузка...</div>
@@ -82,6 +73,29 @@
 
     <div class="canvas-container" id="canvasContainer">
       <canvas id="gameCanvas" width="520" height="720"></canvas>
+
+      <!-- HUD-тексты (позиции — в theme.css) -->
+      <div class="hud-layer" id="hudLayer" aria-hidden="true">
+        <div class="hud-top">
+          <div class="hud-left">
+            <span class="hud-timer" id="hudTimer">00:00</span>
+            <span class="hud-group">
+              <span class="hud-misses-label" id="hudMissesLabel">ПРОМАХИ</span>
+              <span class="hud-misses-value" id="hudMissesValue">0/3</span>
+            </span>
+          </div>
+          <div class="hud-right">
+            <span class="hud-group">
+              <span class="hud-best-label" id="hudBestLabel">РЕКОРД</span>
+              <span class="hud-best-value" id="hudBestValue">0</span>
+            </span>
+            <span class="hud-group">
+              <span class="hud-score-label" id="hudScoreLabel">СЧЁТ</span>
+              <span class="hud-score-value" id="hudScoreValue">0</span>
+            </span>
+          </div>
+        </div>
+      </div>
 
       <div id="startHint" class="touch-hint" role="status" aria-live="polite">
         <div class="hint-start">

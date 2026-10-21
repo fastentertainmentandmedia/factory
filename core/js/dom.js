@@ -1,7 +1,5 @@
 // ============================================================
 // [FILE: core/js/dom.js]
-// Кэш DOM-элементов. Обязательные — обязаны быть в index.html.
-// Необязательные — допускают отсутствие (ui.js это учитывает).
 // ============================================================
 
 export const $ = {
@@ -16,10 +14,19 @@ export const $ = {
   limitBestScore: document.getElementById('limitBestScore'),
 
   introLimitMinutes: document.getElementById('introLimitMinutes'),
+
+  // HUD-тексты (DOM-слой поверх canvas)
+  hudLayer:    document.getElementById('hudLayer'),
+  hudTimer:    document.getElementById('hudTimer'),
+  hudMissesLabel: document.getElementById('hudMissesLabel'),
+  hudMissesValue: document.getElementById('hudMissesValue'),
+  hudBestLabel:   document.getElementById('hudBestLabel'),
+  hudBestValue:   document.getElementById('hudBestValue'),
+  hudScoreLabel:  document.getElementById('hudScoreLabel'),
+  hudScoreValue:  document.getElementById('hudScoreValue'),
 };
 
 
-// Обязательные для работы игры — предупреждаем только по ним.
 const REQUIRED = [
   'canvas',
   'container',

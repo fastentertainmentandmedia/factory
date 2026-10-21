@@ -1,9 +1,9 @@
 // ============================================================
 // [FILE: core/js/controls/tap-zones.js]
-// Тап/клик по круглым зонам на canvas → onPosition(pos).
-// Контракт:
-//   createTapZones(canvas, { getZones, onPosition, onTapOutside })
-//     → { enable, disable, isEnabled, destroy, getMarker }
+// Тап по круглым зонам на canvas.
+// HiDPI: canvas.width = cssW * dpr, но логические координаты
+// зон — в CSS-пикселях. Поэтому clientX/Y → CSS-пиксели
+// через rect (без масштабирования на dpr).
 // ============================================================
 
 const TAP_MARKER_DURATION_MS = 400;
@@ -20,11 +20,10 @@ export function createTapZones(canvas, callbacks) {
 
   function toLogical(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    // canvas CSS-размер = логический (см. resize.js)
     return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top)  * scaleY,
+      x: clientX - rect.left,
+      y: clientY - rect.top,
     };
   }
 

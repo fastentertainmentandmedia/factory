@@ -1,6 +1,5 @@
 /* ============================================================
    [FILE: game/css/theme.css]
-   Вся стилистика Pizza Catch.
    ============================================================ */
 
 :root {
@@ -93,6 +92,11 @@
   --color-ing-spin:       #30a030;  --color-ing-spin-br:    #106010;
   --color-ing-bad:        #806050;  --color-ing-bad-br:     #402818;
 
+  --color-ing-egg:        #fff6d6;  --color-ing-egg-br:     #e0c060;
+  --color-ing-pork:       #f0a0a0;  --color-ing-pork-br:    #c06060;
+  --color-ing-cabbage:    #8fd07a;  --color-ing-cabbage-br: #4a8a3a;
+  --color-ing-chilli:     #e03030;  --color-ing-chilli-br:  #801818;
+
   /* ---------- UI (intro) ---------- */
   --color-panel-border:   #000000;
   --color-warning:        #d87a0f;
@@ -108,12 +112,13 @@
 
   /* ---------- Раскладка поля ---------- */
   --field-aspect: 0.7222;
+
+  /* Пропорции HUD (синхронизированы с config.HUD_*) */
+  --hud-top-h:  0.09;
+  --hud-padding: 0.03;
 }
 
 
-/* ============================================================
-   [BLOCK: html-body]
-   ============================================================ */
 body {
   background-color: var(--color-bg-deep);
   font-family: var(--font-mono);
@@ -143,12 +148,83 @@ body {
   color: var(--color-text-accent);
 }
 
-
-/* ============================================================
-   [BLOCK: canvas]
-   ============================================================ */
 canvas {
   background-color: var(--color-field-bg);
+}
+
+
+/* ============================================================
+   [BLOCK: HUD-тексты (DOM-слой)
+   ============================================================ */
+.hud-layer {
+  font-family: var(--font-mono);
+  color: var(--color-text-accent);
+}
+
+.hud-timer {
+  font-size: 1em;
+  font-weight: 900;
+  letter-spacing: 1px;
+
+  color: var(--color-timer-normal);
+
+  transition: color 0.2s, font-size 0.2s, opacity 0.2s;
+}
+
+.hud-timer.is-warning {
+  font-size: 1.05em;
+  color: var(--color-timer-warning);
+}
+
+.hud-timer.is-danger {
+  font-size: 1.10em;
+  color: var(--color-timer-danger);
+}
+
+.hud-timer.is-critical {
+  font-size: 1.20em;
+  color: var(--color-timer-danger);
+
+  animation: hud-timer-pulse 1s ease-in-out infinite;
+}
+
+@keyframes hud-timer-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+
+.hud-misses-label,
+.hud-best-label,
+.hud-score-label {
+  font-size: 0.7em;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.hud-misses-value,
+.hud-best-value,
+.hud-score-value {
+  font-weight: 900;
+  color: var(--color-text-accent);
+}
+
+.hud-misses-value {
+  font-size: 0.8em;
+}
+
+.hud-misses-value.is-danger {
+  color: var(--color-misses-danger);
+}
+
+.hud-best-value {
+  font-size: 0.75em;
+}
+
+.hud-score-value {
+  font-size: 1em;
 }
 
 

@@ -6,6 +6,13 @@
 export const config = {
 
   // ----------------------------------------------------------
+  // Рендер: ограничение devicePixelRatio (HiDPI).
+  // 1 — без HiDPI; 2 — баланс резкость/производительность;
+  // 3 — максимальная резкость (дороже по памяти/GPU).
+  // ----------------------------------------------------------
+  MAX_DPR: 1,
+
+  // ----------------------------------------------------------
   // Поле (пропорции — доли от W или H)
   // ----------------------------------------------------------
   FIELD_ASPECT: 520 / 720,
@@ -19,10 +26,10 @@ export const config = {
   CONVEYOR_TOP_RATIO:    0.20,
   CONVEYOR_BOTTOM_RATIO: 0.64,
 
-  ITEM_SIZE_RATIO:        0.11,
-  RECIPE_ITEM_SIZE_RATIO: 0.10,
+  ITEM_SIZE_RATIO:        0.12,
+  RECIPE_ITEM_SIZE_RATIO: 0.11,
   LANE_WIDTH_RATIO:       0.20,
-  TAP_RADIUS_RATIO:       0.13,
+  TAP_RADIUS_RATIO:       0.12,
 
   WAIT_POS_X_RATIO: 0.50,
   WAIT_POS_Y_RATIO: 0.92,
@@ -147,7 +154,6 @@ export const config = {
       { id: 'ham',    colorVar: '--color-ing-ham',    borderVar: '--color-ing-ham-br',    fallback: { color: '#f0a0a0', border: '#a06060' } },
       { id: 'spin',   colorVar: '--color-ing-spin',   borderVar: '--color-ing-spin-br',   fallback: { color: '#30a030', border: '#106010' } },
 
-      // Новые ингредиенты (SVG из game/assets/ingredients/)
       { id: 'egg',    colorVar: '--color-ing-egg',    borderVar: '--color-ing-egg-br',    fallback: { color: '#fff6d6', border: '#e0c060' } },
       { id: 'pork',   colorVar: '--color-ing-pork',   borderVar: '--color-ing-pork-br',   fallback: { color: '#f0a0a0', border: '#c06060' } },
       { id: 'cabbage', colorVar: '--color-ing-cabbage', borderVar: '--color-ing-cabbage-br', fallback: { color: '#8fd07a', border: '#4a8a3a' } },

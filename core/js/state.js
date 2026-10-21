@@ -5,6 +5,9 @@
 export const state = {
   score: 0,
   bestScore: 0,
+  misses: 0,
+  pizzasMade: 0,
+
   gameActive: false,
   gameStarted: false,
   gameOver: false,
@@ -31,6 +34,8 @@ export function updateState(patch, ui) {
 
 export function resetGameState() {
   state.score = 0;
+  state.misses = 0;
+  state.pizzasMade = 0;
   state.gameActive = true;
   state.gameStarted = true;
   state.gameOver = false;

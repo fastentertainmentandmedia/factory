@@ -1,14 +1,7 @@
 /* ============================================================
    [FILE: core/css/layout.css]
-   Назначение: структура каркаса. Позиционирование, размеры,
-   flex/grid. Без цветов, градиентов, теней, скруглений.
-   Вся стилистика — в game/css/theme.css.
    ============================================================ */
 
-
-/* ============================================================
-   [BLOCK: game-wrapper]
-   ============================================================ */
 .game-wrapper {
   position: fixed;
   inset: 0;
@@ -30,10 +23,6 @@
   touch-action: manipulation;
 }
 
-
-/* ============================================================
-   [BLOCK: header]
-   ============================================================ */
 .header {
   flex: 0 0 auto;
 
@@ -71,12 +60,6 @@
   object-fit: contain;
 }
 
-
-/* ============================================================
-   [BLOCK: canvas-container]
-   Поле: адаптивно по aspect-ratio, ограничено высотой,
-   центрировано. --field-aspect задаётся в game/css/theme.css.
-   ============================================================ */
 .canvas-container {
   flex: 1 1 auto;
   min-height: 0;
@@ -99,10 +82,6 @@
   touch-action: manipulation;
 }
 
-
-/* ============================================================
-   [BLOCK: canvas]
-   ============================================================ */
 canvas {
   display: block;
   width: 100%;
@@ -110,4 +89,61 @@ canvas {
 
   touch-action: manipulation;
   cursor: pointer;
+}
+
+/* ============================================================
+   [BLOCK: hud-layer]
+   Слой HUD-текстов поверх canvas. Позиционирование — структура;
+   цвета/шрифт — в theme.css.
+   ============================================================ */
+.hud-layer {
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+
+  z-index: 1;
+
+  /* Базовая единица шрифта; переопределяется через JS (--hud-font-size). */
+  font-size: var(--hud-font-size, 18px);
+  line-height: 1;
+}
+
+.hud-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: calc(var(--hud-top-h, 0.09) * 100%);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 calc(var(--hud-padding, 0.03) * 100%);
+
+  box-sizing: border-box;
+}
+
+.hud-left {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9em;
+  white-space: nowrap;
+}
+
+.hud-right {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9em;
+  white-space: nowrap;
+}
+
+.hud-group {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
 }

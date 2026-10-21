@@ -46,13 +46,12 @@ export const config = {
 
   BOWL_FLASH_MS: 260,
 
+  // После сборки пиццы (когда рецепт сменён) возвращать чашу
+  // в нейтральное положение (позиция 3 — «ожидание»).
+  RESET_POSITION_AFTER_PIZZA: true,
+
   // ----------------------------------------------------------
   // Таймер: пороги смены вида (доли от PLAY_LIMIT_MINUTES).
-  // Считаются от лимита игрока, а не от хардкод-секунд.
-  //   ratio > WARN      — normal
-  //   ratio <= WARN     — warning
-  //   ratio <= DANGER   — danger
-  //   ratio <= CRITICAL — critical (danger + крупнее)
   // ----------------------------------------------------------
   TIMER_WARN_RATIO:     0.50,
   TIMER_DANGER_RATIO:   0.20,
@@ -62,12 +61,12 @@ export const config = {
   // Скорость и спавн (FPS-независимо)
   // ----------------------------------------------------------
   BASE_FALL_SPEED: 2 * 60,
-  SPEED_PER_PIZZA: 0.25,
+  SPEED_PER_PIZZA: 0.20,
 
-  BASE_SPAWN_MIN_MS: 90 * (1000 / 60),
-  BASE_SPAWN_MAX_MS: 170 * (1000 / 60),
-  SPAWN_RATE_PER_PIZZA: 0.05,
-  MIN_SPAWN_INTERVAL_MS: 80 * (1000 / 60),
+  BASE_SPAWN_MIN_MS: 80 * (1000 / 60),
+  BASE_SPAWN_MAX_MS: 150 * (1000 / 60),
+  SPAWN_RATE_PER_PIZZA: 0.10,
+  MIN_SPAWN_INTERVAL_MS: 65 * (1000 / 60),
 
   // ----------------------------------------------------------
   // Цвета — имена CSS-переменных + fallback.
@@ -83,11 +82,9 @@ export const config = {
     recipeCheckBg:   { var: '--color-recipe-check-bg', fallback: 'rgba(0,180,0,0.3)' },
     recipeArrow:     { var: '--color-recipe-arrow',    fallback: '#888888' },
 
-    // HUD: подписи и значения (по мотивам .stat-label/.stat-value)
     hudLabel:        { var: '--color-text-dim',        fallback: '#555555' },
     hudValue:        { var: '--color-text-accent',     fallback: '#000000' },
 
-    // Таймер по мере истечения
     timerNormal:     { var: '--color-timer-normal',    fallback: '#38b24a' },
     timerWarning:    { var: '--color-timer-warning',   fallback: '#d87a0f' },
     timerDanger:     { var: '--color-timer-danger',    fallback: '#cc0000' },

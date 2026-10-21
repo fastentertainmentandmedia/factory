@@ -28,7 +28,7 @@ export function createRules() {
   let collected = [];
 
   let pizzaAnim = null;
-  let bowlFlash = null;          // { kind: 'good'|'bad', startTime, duration }
+  let bowlFlash = null;
   let conveyorOffset = 0;
 
   let fieldW = 520;
@@ -78,7 +78,7 @@ export function createRules() {
     }
     return {
       kind: bowlFlash.kind,
-      progress: elapsed / bowlFlash.duration,   // 0..1
+      progress: elapsed / bowlFlash.duration,
     };
   }
 
@@ -122,7 +122,6 @@ export function createRules() {
     const idx = lanes[laneIdx].indexOf(obj);
     if (idx !== -1) lanes[laneIdx].splice(idx, 1);
 
-    // Плохой ингредиент — красная вспышка, промах.
     if (ingr.id === 'bad') {
       triggerBowlFlash('bad');
       misses++;
@@ -130,7 +129,6 @@ export function createRules() {
       return { event: over ? 'gameover' : 'score' };
     }
 
-    // Не тот по рецепту — красная вспышка, промах.
     const nextNeeded = recipe[collected.length];
     if (ingr.id !== nextNeeded) {
       triggerBowlFlash('bad');
@@ -139,7 +137,6 @@ export function createRules() {
       return { event: over ? 'gameover' : 'score' };
     }
 
-    // Правильный ингредиент — зелёная вспышка, +очки.
     triggerBowlFlash('good');
     score += config.SCORE_PER_INGREDIENT;
     collected.push(nextNeeded);
@@ -176,6 +173,12 @@ export function createRules() {
       if (performance.now() - pizzaAnim.startTime > config.PIZZA_ANIM_MS) {
         pizzaAnim = null;
         newRecipe();
+
+        // После сборки пиццы — чаша в нейтральное положение.
+        if (config.RESET_POSITION_AFTER_PIZZA) {
+          currentPos = 3;
+        }
+
         return { event: 'score' };
       }
       return { event: null };

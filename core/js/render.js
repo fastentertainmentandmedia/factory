@@ -1,8 +1,8 @@
 // ============================================================
 // [FILE: core/js/render.js]
 // Canvas 2D отрисовка Pizza Catch.
-// Лейны: вертикальный градиент (статичный, без паттерна) —
-// нейтральный фон, не конкурирует с движущимися объектами.
+// Лейны: вертикальный градиент (статичный, без паттерна).
+// Зоны тапа: только круги (заливка + пунктир), без стрелок.
 // ============================================================
 
 import { config } from './config.js';
@@ -268,7 +268,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fillStyle = grad;
     ctx.fillRect(left, conveyorTop, width, height);
 
-    // боковые границы
     ctx.strokeStyle = COLORS.conveyorBorder;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -276,7 +275,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.moveTo(left + width, conveyorTop); ctx.lineTo(left + width, conveyorBottom);
     ctx.stroke();
 
-    // активный лейн
     if (isActive) {
       ctx.strokeStyle = COLORS.conveyorActive;
       ctx.lineWidth = 3;
@@ -330,9 +328,11 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fill();
   }
 
+  // ----------------------------------------------------------
+  // Зоны тапа: только круги (заливка + пунктир). Без стрелок.
+  // ----------------------------------------------------------
   function drawPositionMarkers(currentPos) {
     const zones = getTapZones();
-    const labels = ['←', '↑', '→', '↓'];
 
     for (let i = 0; i < zones.length; i++) {
       const z = zones[i];
@@ -352,14 +352,7 @@ export function createRenderer(canvas, callbacks = {}) {
       ctx.setLineDash([6, 5]);
       ctx.stroke();
       ctx.setLineDash([]);
-
-      ctx.fillStyle = withAlpha(COLORS.zoneText, 0.5 + pulse * 0.4);
-      ctx.font = `bold ${Math.round(tapRadius * 0.4)}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(labels[z.pos], z.x, z.y);
     }
-    ctx.textBaseline = 'alphabetic';
   }
 
   function drawRecipe(state) {

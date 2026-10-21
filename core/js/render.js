@@ -1,7 +1,8 @@
 // ============================================================
 // [FILE: core/js/render.js]
 // Canvas 2D отрисовка Pizza Catch.
-// Миска: вспышка зелёным (good) / красным (bad).
+// HUD: таймер/промахи/рекорд/счёт — стиль из theme.css (--font-mono).
+// Таймер меняет цвет/размер по мере истечения (пороги от лимита).
 // ============================================================
 
 import { config } from './config.js';
@@ -47,6 +48,7 @@ export function createRenderer(canvas, callbacks = {}) {
   let COLORS = {};
   let ING_COLORS = {};
   let BAD_COLOR = null;
+  let HUD_FONT = 'monospace';
 
   // ----------------------------------------------------------
   // SVG/PNG ингредиентов (опционально)
@@ -70,7 +72,7 @@ export function createRenderer(canvas, callbacks = {}) {
   })();
 
   // ----------------------------------------------------------
-  // Цвета
+  // Цвета + шрифт
   // ----------------------------------------------------------
   function refreshColors() {
     const style = getComputedStyle(document.documentElement);
@@ -88,6 +90,9 @@ export function createRenderer(canvas, callbacks = {}) {
       ING_COLORS[c.id] = c;
     }
     BAD_COLOR = readIngredientColors(style, config.COLORS.badIngredient);
+
+    const fontRaw = style.getPropertyValue('--font-mono').trim();
+    HUD_FONT = fontRaw || "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
   }
 
   function ingrColors(ingr) {
@@ -304,35 +309,31 @@ export function createRenderer(canvas, callbacks = {}) {
     let flashPulse = 0;
 
     if (bowlFlash) {
-      // sin(π * progress) — 0 → 1 → 0. Мягкое «моргание».
       flashPulse = Math.sin(Math.PI * bowlFlash.progress);
 
       if (bowlFlash.kind === 'good') {
         flashColor = COLORS.bowlFlashGood;
-        scale = 1 + 0.10 * flashPulse;       // лёгкое увеличение
+        scale = 1 + 0.10 * flashPulse;
       } else {
         flashColor = COLORS.bowlFlashBad;
-        scale = 1 - 0.05 * flashPulse;       // лёгкое уменьшение
-        dx = Math.sin(bowlFlash.progress * 40) * 2 * flashPulse; // дрожание
+        scale = 1 - 0.05 * flashPulse;
+        dx = Math.sin(bowlFlash.progress * 40) * 2 * flashPulse;
       }
     }
 
     const bx = cx + dx;
     const rx = 45 * scale;
 
-    // базовые цвета
     const bodyColor  = flashColor ? mixColor(COLORS.bowlBody,  flashColor, 0.35 * flashPulse) : COLORS.bowlBody;
     const rimColor   = flashColor ? mixColor(COLORS.bowlRim,   flashColor, 0.35 * flashPulse) : COLORS.bowlRim;
     const innerColor = flashColor ? mixColor(COLORS.bowlInner, flashColor, 0.35 * flashPulse) : COLORS.bowlInner;
     const borderColor = flashColor || COLORS.bowlBorder;
 
-    // тень
     ctx.beginPath();
     ctx.ellipse(bx, cy + 12, rx, 10, 0, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.bowlShadow;
     ctx.fill();
 
-    // тело
     ctx.beginPath();
     ctx.moveTo(bx - rx, cy - 15);
     ctx.lineTo(bx + rx, cy - 15);
@@ -345,7 +346,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // обод
     ctx.beginPath();
     ctx.ellipse(bx, cy - 15, rx, 10, 0, 0, Math.PI * 2);
     ctx.fillStyle = rimColor;
@@ -354,7 +354,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // внутреннее дно
     ctx.beginPath();
     ctx.ellipse(bx, cy - 15, rx * 0.85, 7, 0, 0, Math.PI * 2);
     ctx.fillStyle = innerColor;
@@ -363,7 +362,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // блик
     ctx.beginPath();
     ctx.ellipse(bx - 20, cy - 16, 12, 3, 0, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.bowlHighlight;
@@ -398,23 +396,20 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Верхняя панель
+  // Верхняя панель: без разделительной линии между строками.
+  // Таймер меняет цвет/размер по мере истечения (ratio от лимита).
   // ----------------------------------------------------------
   function drawRecipe(state) {
     const { recipe, collected, score, misses } = state;
 
     const panelH = hudTopH + hudRecipeH + 8;
 
+    // фон панели
     ctx.fillStyle = COLORS.recipeBg;
     ctx.fillRect(0, 0, W, panelH);
 
+    // нижняя граница панели (с лентами)
     ctx.strokeStyle = COLORS.recipeBorder;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(hudPadding, recipeY);
-    ctx.lineTo(W - hudPadding, recipeY);
-    ctx.stroke();
-
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, panelH);
@@ -423,53 +418,117 @@ export function createRenderer(canvas, callbacks = {}) {
 
     const topCenterY = recipeY / 2;
 
-    // СЛЕВА: таймер + промахи
+    // ==========================================================
+    // ВЕРХНЯЯ СТРОКА: таймер / промахи (слева), рекорд / счёт (справа)
+    // ==========================================================
     const timeLeftMs = getRemainingMs();
+    const limitMs = Math.max(1, gameConfig.PLAY_LIMIT_MINUTES * 60 * 1000);
+    const ratio = timeLeftMs / limitMs;
+
+    let timerColor = COLORS.timerNormal;
+    let timerSize = 20;
+    let timerPulse = false;
+
+    if (ratio <= config.TIMER_CRITICAL_RATIO) {
+      timerColor = COLORS.timerDanger;
+      timerSize = 24;
+      timerPulse = true;
+    } else if (ratio <= config.TIMER_DANGER_RATIO) {
+      timerColor = COLORS.timerDanger;
+      timerSize = 22;
+      timerPulse = true;
+    } else if (ratio <= config.TIMER_WARN_RATIO) {
+      timerColor = COLORS.timerWarning;
+      timerSize = 21;
+    }
+
     const totalSec = Math.ceil(timeLeftMs / 1000);
     const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
     const ss = String(totalSec % 60).padStart(2, '0');
+    const timerText = `${mm}:${ss}`;
 
+    // ---------- СЛЕВА ----------
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
-    ctx.fillStyle = COLORS.recipeText;
-    ctx.font = 'bold 20px monospace';
-    ctx.fillText(`${mm}:${ss}`, hudPadding, topCenterY);
+    // Таймер
+    ctx.save();
+    if (timerPulse) {
+      ctx.globalAlpha = 0.65 + 0.35 * Math.sin(performance.now() / 300);
+    }
+    ctx.fillStyle = timerColor;
+    ctx.font = `bold ${timerSize}px ${HUD_FONT}`;
+    ctx.fillText(timerText, hudPadding, topCenterY);
+    ctx.restore();
 
-    const timerW = ctx.measureText(`${mm}:${ss}`).width;
+    const timerW = ctx.measureText
+      ? measureWithFont(timerText, `bold ${timerSize}px ${HUD_FONT}`)
+      : 0;
 
-    ctx.fillStyle = misses >= config.MAX_MISSES - 1
-      ? COLORS.missesDanger
-      : COLORS.missesText;
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(
-      `ПРОМАХИ ${misses}/${config.MAX_MISSES}`,
-      hudPadding + timerW + 16,
-      topCenterY
-    );
+    // Промахи: подпись + значение
+    const missesLabel = 'ПРОМАХИ';
+    const missesValue = `${misses}/${config.MAX_MISSES}`;
+    const missesDanger = misses >= config.MAX_MISSES - 1;
 
-    // СПРАВА: рекорд + счёт
+    const labelSize = 14;
+    const valueSize = 14;
+
+    let mx = hudPadding + timerW + 16;
+
+    ctx.fillStyle = COLORS.hudLabel;
+    ctx.font = `bold ${labelSize}px ${HUD_FONT}`;
+    ctx.fillText(missesLabel, mx, topCenterY);
+
+    const missesLabelW = measureWithFont(missesLabel, `bold ${labelSize}px ${HUD_FONT}`);
+    mx += missesLabelW + 6;
+
+    ctx.fillStyle = missesDanger ? COLORS.missesDanger : COLORS.hudValue;
+    ctx.font = `bold ${valueSize}px ${HUD_FONT}`;
+    ctx.fillText(missesValue, mx, topCenterY);
+
+    // ---------- СПРАВА ----------
     const best = getBestScore();
 
     ctx.textAlign = 'right';
 
-    ctx.fillStyle = COLORS.scoreText;
-    ctx.font = 'bold 18px monospace';
-    ctx.fillText(`СЧЁТ ${score}`, W - hudPadding, topCenterY);
+    // Счёт: значение
+    const scoreValueSize = 14;
+    ctx.fillStyle = COLORS.hudValue;
+    ctx.font = `bold ${scoreValueSize}px ${HUD_FONT}`;
+    ctx.fillText(`${score}`, W - hudPadding, topCenterY);
+    const scoreW = measureWithFont(`${score}`, `bold ${scoreValueSize}px ${HUD_FONT}`);
 
-    const scoreW = ctx.measureText(`СЧЁТ ${score}`).width;
+    // Счёт: подпись
+    const scoreLabel = 'СЧЁТ';
+    const scoreLabelSize = 14;
+    ctx.fillStyle = COLORS.hudLabel;
+    ctx.font = `bold ${scoreLabelSize}px ${HUD_FONT}`;
+    ctx.fillText(scoreLabel, W - hudPadding - scoreW - 6, topCenterY);
+    const scoreLabelW = measureWithFont(scoreLabel, `bold ${scoreLabelSize}px ${HUD_FONT}`);
 
-    ctx.fillStyle = COLORS.recipeText;
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(
-      `РЕКОРД ${best}`,
-      W - hudPadding - scoreW - 16,
-      topCenterY
-    );
+    // Рекорд: подпись + значение (левее счёта)
+    const bestLabel = 'РЕКОРД';
+    const bestValue = `${best}`;
+    const bestLabelSize = 14;
+    const bestValueSize = 14;
+
+    const bestBlockRight = W - hudPadding - scoreW - 6 - scoreLabelW - 16;
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = COLORS.hudValue;
+    ctx.font = `bold ${bestValueSize}px ${HUD_FONT}`;
+    ctx.fillText(bestValue, bestBlockRight, topCenterY);
+    const bestValueW = measureWithFont(bestValue, `bold ${bestValueSize}px ${HUD_FONT}`);
+
+    ctx.fillStyle = COLORS.hudLabel;
+    ctx.font = `bold ${bestLabelSize}px ${HUD_FONT}`;
+    ctx.fillText(bestLabel, bestBlockRight - bestValueW - 6, topCenterY);
 
     ctx.textBaseline = 'alphabetic';
 
-    // НИЖНЯЯ СТРОКА: рецепт
+    // ==========================================================
+    // НИЖНЯЯ СТРОКА: ингредиенты рецепта
+    // ==========================================================
     const len = recipe.length;
     const leftBound  = hudPadding;
     const rightBound = W - hudPadding;
@@ -511,7 +570,7 @@ export function createRenderer(canvas, callbacks = {}) {
 
       if (i < len - 1) {
         ctx.fillStyle = COLORS.recipeArrow;
-        ctx.font = `${Math.min(14, gap*0.4)}px monospace`;
+        ctx.font = `${Math.min(14, gap*0.4)}px ${HUD_FONT}`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('→', ix + gap/2, iconY);
@@ -570,10 +629,10 @@ export function createRenderer(canvas, callbacks = {}) {
     }
 
     ctx.fillStyle = `rgba(0,0,0,${alpha})`;
-    ctx.font = 'bold 28px monospace';
+    ctx.font = `bold 28px ${HUD_FONT}`;
     ctx.textAlign = 'center';
     ctx.fillText('+50', px, py + pr + 50);
-    ctx.font = 'bold 20px monospace';
+    ctx.font = `bold 20px ${HUD_FONT}`;
     ctx.fillText('ПИЦЦА ГОТОВА!', px, py + pr + 80);
   }
 
@@ -583,14 +642,14 @@ export function createRenderer(canvas, callbacks = {}) {
 
     ctx.fillStyle = COLORS.gameOverTitle;
     ctx.textAlign = 'center';
-    ctx.font = 'bold 36px monospace';
+    ctx.font = `bold 36px ${HUD_FONT}`;
     ctx.fillText('GAME OVER', W/2, H/2 - 10);
 
     ctx.fillStyle = COLORS.gameOverText;
-    ctx.font = 'bold 20px monospace';
+    ctx.font = `bold 20px ${HUD_FONT}`;
     ctx.fillText(`СЧЁТ: ${state.score}`, W/2, H/2 + 20);
 
-    ctx.font = '16px monospace';
+    ctx.font = `16px ${HUD_FONT}`;
     ctx.fillText('тап по экрану — рестарт', W/2, H/2 + 50);
   }
 
@@ -630,21 +689,29 @@ export function createRenderer(canvas, callbacks = {}) {
       dishY = conveyorBottom + 40;
     }
     drawBowl(dishX, dishY, state.bowlFlash);
-/*
+
     if (state.currentPos === 3) {
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
-      ctx.font = 'bold 12px monospace';
+      ctx.font = `bold 12px ${HUD_FONT}`;
       ctx.textAlign = 'center';
       ctx.fillText('ОЖИДАНИЕ', dishX, dishY + 55);
     }
-*/
+
     if (state.pizzaAnim) drawPizzaAnim(state.pizzaAnim);
     if (state.over) drawGameOver(state);
   }
 
   // ----------------------------------------------------------
-  // Цветовые утилиты
+  // Утилиты
   // ----------------------------------------------------------
+  function measureWithFont(text, font) {
+    const prev = ctx.font;
+    ctx.font = font;
+    const w = ctx.measureText(text).width;
+    ctx.font = prev;
+    return w;
+  }
+
   function withAlpha(color, a) {
     const c = parseColor(color);
     if (!c) return color;

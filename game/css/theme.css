@@ -17,6 +17,11 @@
   --color-text-warm:      #222222;
   --color-text-accent:    #000000;
 
+  /* ---------- Таймер по мере истечения ---------- */
+  --color-timer-normal:   #38b24a;
+  --color-timer-warning:  #d87a0f;
+  --color-timer-danger:   #cc0000;
+
   /* ---------- Рецепт ---------- */
   --color-recipe-bg:      #f0f0f0;
   --color-recipe-border:  #000000;

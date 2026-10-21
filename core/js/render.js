@@ -1,8 +1,10 @@
 // ============================================================
 // [FILE: core/js/render.js]
 // Canvas 2D отрисовка Pizza Catch.
-// Лейны: вертикальный градиент (статичный, без паттерна).
-// Зоны тапа: только круги (заливка + пунктир), без стрелок.
+// Верхняя панель (две строки):
+//   верхняя — таймер/промахи (слева), рекорд/счёт (справа)
+//   нижняя  — ингредиенты рецепта (на всю ширину)
+// Лейны: вертикальный градиент. Зоны тапа: только круги.
 // ============================================================
 
 import { config } from './config.js';
@@ -31,7 +33,10 @@ export function createRenderer(canvas, callbacks = {}) {
   let H = canvas.height || 720;
 
   let laneX = [];
-  let recipeH = 0;
+  let hudTopH = 0;
+  let hudRecipeH = 0;
+  let recipeY = 0;
+  let hudPadding = 0;
   let conveyorTop = 0;
   let conveyorBottom = 0;
   let itemSize = 0;
@@ -99,11 +104,21 @@ export function createRenderer(canvas, callbacks = {}) {
   function recomputeGeometry() {
     const minWH = Math.min(W, H);
     laneX = config.LANE_X_RATIOS.map(r => r * W);
-    recipeH = config.RECIPE_H_RATIO * H;
+
+    hudTopH     = config.HUD_TOP_H_RATIO * H;
+    hudRecipeH  = config.HUD_RECIPE_H_RATIO * H;
+    recipeY     = hudTopH;
+    hudPadding  = config.HUD_PADDING_RATIO * W;
+
     conveyorTop = config.CONVEYOR_TOP_RATIO * H;
     conveyorBottom = config.CONVEYOR_BOTTOM_RATIO * H;
+
     itemSize = config.ITEM_SIZE_RATIO * minWH;
-    recipeItemSize = config.RECIPE_ITEM_SIZE_RATIO * minWH;
+
+    // Размер иконки рецепта — от ширины, т.к. нижняя строка теперь
+    // на всю ширину W.
+    recipeItemSize = config.RECIPE_ITEM_SIZE_RATIO * W;
+
     laneWidth = config.LANE_WIDTH_RATIO * W;
     tapRadius = config.TAP_RADIUS_RATIO * minWH;
     waitX = config.WAIT_POS_X_RATIO * W;
@@ -253,7 +268,7 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Конвейер: вертикальный градиент. Без паттерна, без анимации.
+  // Конвейер: вертикальный градиент.
   // ----------------------------------------------------------
   function drawConveyor(lx, isActive) {
     const halfW = laneWidth / 2;
@@ -329,7 +344,7 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Зоны тапа: только круги (заливка + пунктир). Без стрелок.
+  // Зоны тапа: только круги.
   // ----------------------------------------------------------
   function drawPositionMarkers(currentPos) {
     const zones = getTapZones();
@@ -355,67 +370,131 @@ export function createRenderer(canvas, callbacks = {}) {
     }
   }
 
+  // ----------------------------------------------------------
+  // Верхняя панель: две строки.
+  //   верхняя — таймер/промахи (слева), рекорд/счёт (справа)
+  //   нижняя  — ингредиенты рецепта на всю ширину
+  // ----------------------------------------------------------
   function drawRecipe(state) {
-    const { recipe, collected, score, misses, pizzasMade } = state;
+    const { recipe, collected, score, misses } = state;
 
+    const panelH = hudTopH + hudRecipeH + 8;
+
+    // фон панели
     ctx.fillStyle = COLORS.recipeBg;
-    ctx.fillRect(0, 0, W, recipeH + 20);
+    ctx.fillRect(0, 0, W, panelH);
 
+    // разделительная линия между строками
     ctx.strokeStyle = COLORS.recipeBorder;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(0, recipeH + 20);
-    ctx.lineTo(W, recipeH + 20);
+    ctx.moveTo(hudPadding, recipeY);
+    ctx.lineTo(W - hudPadding, recipeY);
     ctx.stroke();
 
+    // нижняя граница панели
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, panelH);
+    ctx.lineTo(W, panelH);
+    ctx.stroke();
+
+    // ==========================================================
+    // ВЕРХНЯЯ СТРОКА: тексты
+    // ==========================================================
+    const topCenterY = recipeY / 2;
+
+    // ---------- СЛЕВА: таймер + промахи ----------
     const timeLeftMs = getRemainingMs();
     const totalSec = Math.ceil(timeLeftMs / 1000);
     const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
     const ss = String(totalSec % 60).padStart(2, '0');
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    // таймер — крупно, слева по центру верхней строки
+    ctx.fillStyle = COLORS.recipeText;
+    ctx.font = 'bold 20px monospace';
+    ctx.fillText(`${mm}:${ss}`, hudPadding, topCenterY);
+
+    // ширина таймера — чтобы отодвинуть промахи вправо
+    const timerW = ctx.measureText(`${mm}:${ss}`).width;
+
+    // промахи — справа от таймера, мельче
+    ctx.fillStyle = misses >= config.MAX_MISSES - 1
+      ? COLORS.missesDanger
+      : COLORS.missesText;
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(
+      `ПРОМАХИ ${misses}/${config.MAX_MISSES}`,
+      hudPadding + timerW + 16,
+      topCenterY
+    );
+
+    // ---------- СПРАВА: рекорд + счёт ----------
     const best = getBestScore();
 
+    ctx.textAlign = 'right';
+
+    // счёт — крупно, справа
+    ctx.fillStyle = COLORS.scoreText;
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText(`СЧЁТ ${score}`, W - hudPadding, topCenterY);
+
+    const scoreW = ctx.measureText(`СЧЁТ ${score}`).width;
+
+    // рекорд — левее счёта, помельче
     ctx.fillStyle = COLORS.recipeText;
-    ctx.font = 'bold 13px monospace';
-    ctx.textAlign = 'left';
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(
+      `РЕКОРД ${best}`,
+      W - hudPadding - scoreW - 16,
+      topCenterY
+    );
 
-    ctx.fillText(`TIME ${mm}:${ss}`, 10, 18);
-    ctx.fillText(`BEST ${best}`, 10, 36);
+    ctx.textBaseline = 'alphabetic';
 
+    // ==========================================================
+    // НИЖНЯЯ СТРОКА: ингредиенты рецепта (на всю ширину)
+    // ==========================================================
     const len = recipe.length;
-    const reservedLeft = 100;
-    const reservedRight = 100;
-    const availableWidth = Math.max(0, W - reservedLeft - reservedRight);
-    const gap = Math.min(48, availableWidth / Math.max(1, len));
-    const iconSize = Math.min(recipeItemSize, gap - 8);
-    const startX = reservedLeft + (availableWidth - gap * len) / 2 + gap / 2;
+
+    const leftBound  = hudPadding;
+    const rightBound = W - hudPadding;
+    const availableWidth = Math.max(0, rightBound - leftBound);
+
+    const gap = availableWidth / Math.max(1, len);
+    const iconSize = Math.min(recipeItemSize, gap - 6);
+    const startX = leftBound + gap / 2;
+    const iconY = recipeY + hudRecipeH / 2;
 
     for (let i = 0; i < len; i++) {
       const id = recipe[i];
       const ingr = ALL_INGR_BY_ID(id);
       const ix = startX + i * gap;
-      const iy = 30;
 
       ctx.beginPath();
-      ctx.arc(ix, iy, iconSize/2 + 2, 0, Math.PI * 2);
+      ctx.arc(ix, iconY, iconSize/2 + 2, 0, Math.PI * 2);
       ctx.fillStyle = COLORS.recipeIconBg;
       ctx.fill();
       ctx.strokeStyle = COLORS.recipeIconBorder;
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      drawIngredient(ix, iy, ingr, iconSize);
+      drawIngredient(ix, iconY, ingr, iconSize);
 
       if (i < collected) {
         ctx.beginPath();
-        ctx.arc(ix, iy, iconSize/2 + 2, 0, Math.PI * 2);
+        ctx.arc(ix, iconY, iconSize/2 + 2, 0, Math.PI * 2);
         ctx.fillStyle = COLORS.recipeCheckBg;
         ctx.fill();
         ctx.strokeStyle = COLORS.recipeCheck;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(ix - iconSize*0.23, iy);
-        ctx.lineTo(ix - iconSize*0.05, iy + iconSize*0.17);
-        ctx.lineTo(ix + iconSize*0.3, iy - iconSize*0.23);
+        ctx.moveTo(ix - iconSize*0.23, iconY);
+        ctx.lineTo(ix - iconSize*0.05, iconY + iconSize*0.17);
+        ctx.lineTo(ix + iconSize*0.3, iconY - iconSize*0.23);
         ctx.stroke();
       }
 
@@ -423,24 +502,11 @@ export function createRenderer(canvas, callbacks = {}) {
         ctx.fillStyle = COLORS.recipeArrow;
         ctx.font = `${Math.min(14, gap*0.4)}px monospace`;
         ctx.textAlign = 'center';
-        ctx.fillText('→', ix + gap/2, iy + 5);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('→', ix + gap/2, iconY);
+        ctx.textBaseline = 'alphabetic';
       }
     }
-
-    ctx.fillStyle = COLORS.scoreText;
-    ctx.font = 'bold 14px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(`SCORE: ${score}`, W - 10, 20);
-
-    ctx.fillStyle = misses >= config.MAX_MISSES - 1
-      ? COLORS.missesDanger
-      : COLORS.missesText;
-    ctx.fillText(`MISS: ${misses}/${config.MAX_MISSES}`, W - 10, 38);
-
-    ctx.fillStyle = COLORS.pizzasText;
-    ctx.font = '11px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(`PIZZAS: ${pizzasMade}`, W - 10, 55);
   }
 
   function drawPizzaAnim(pizzaAnim) {

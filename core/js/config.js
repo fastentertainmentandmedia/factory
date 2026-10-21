@@ -12,18 +12,24 @@ export const config = {
 
   LANE_X_RATIOS: [0.20, 0.50, 0.80],
 
-  RECIPE_H_RATIO: 0.11,
-  CONVEYOR_TOP_RATIO:    0.15,
+  // Верхняя панель: две строки.
+  //   верхняя — тексты (таймер/промахи/рекорд/счёт)
+  //   нижняя  — ингредиенты рецепта
+  HUD_TOP_H_RATIO:      0.09,
+  HUD_RECIPE_H_RATIO:   0.09,
+  HUD_PADDING_RATIO:    0.03,   // гориз. отступ рецепта от краёв (доля W)
+
+  CONVEYOR_TOP_RATIO:    0.20,   // было 0.15 — панель выше
   CONVEYOR_BOTTOM_RATIO: 0.64,
 
-  ITEM_SIZE_RATIO:        0.085,
-  RECIPE_ITEM_SIZE_RATIO: 0.065,
+  ITEM_SIZE_RATIO:        0.11,
+  RECIPE_ITEM_SIZE_RATIO: 0.10,   // теперь доля от W (не от minWH)
   LANE_WIDTH_RATIO:       0.20,
-  TAP_RADIUS_RATIO:       0.12,
+  TAP_RADIUS_RATIO:       0.13,
 
   WAIT_POS_X_RATIO: 0.50,
   WAIT_POS_Y_RATIO: 0.92,
-  MARKERS_OFFSET_RATIO: 0.08,
+  MARKERS_OFFSET_RATIO: 0.07,
 
   // ----------------------------------------------------------
   // Правила
@@ -44,13 +50,13 @@ export const config = {
   // ----------------------------------------------------------
   // Скорость и спавн (FPS-независимо)
   // ----------------------------------------------------------
-  BASE_FALL_SPEED: 1.2 * 60,
+  BASE_FALL_SPEED: 3 * 60,
   SPEED_PER_PIZZA: 0.20,
 
-  BASE_SPAWN_MIN_MS: 50 * (1000 / 60),
-  BASE_SPAWN_MAX_MS: 90 * (1000 / 60),
+  BASE_SPAWN_MIN_MS: 80 * (1000 / 60),
+  BASE_SPAWN_MAX_MS: 150 * (1000 / 60),
   SPAWN_RATE_PER_PIZZA: 0.10,
-  MIN_SPAWN_INTERVAL_MS: 40 * (1000 / 60),
+  MIN_SPAWN_INTERVAL_MS: 65 * (1000 / 60),
 
   // ----------------------------------------------------------
   // Цвета — имена CSS-переменных + fallback.
@@ -66,11 +72,10 @@ export const config = {
     recipeCheckBg:   { var: '--color-recipe-check-bg', fallback: 'rgba(0,180,0,0.3)' },
     recipeArrow:     { var: '--color-recipe-arrow',    fallback: '#888888' },
 
-    // Лейн: градиент от conveyorBg (верх) к conveyorBgBottom (низ).
     conveyorBg:       { var: '--color-conveyor-bg',        fallback: '#d8d8d8' },
     conveyorBgBottom: { var: '--color-conveyor-bg-bottom', fallback: '#c4c4c4' },
     conveyorStripe:   { var: '--color-conveyor-stripe',    fallback: '#a8a8a8' },
-    conveyorBorder:   { var: '--color-conveyor-border',    fallback: '#888888' },
+    conveyorBorder:   { var: '--color-conveyor-border',    fallback: '#a0a0a0' },
     conveyorArrow:    { var: '--color-conveyor-arrow',     fallback: 'rgba(80,80,80,0.4)' },
     conveyorActive:   { var: '--color-conveyor-active',    fallback: 'rgba(255,200,0,0.8)' },
     conveyorActiveBg: { var: '--color-conveyor-active-bg', fallback: 'rgba(255,220,100,0.35)' },

@@ -161,12 +161,6 @@ body {
    ============================================================ */
 canvas {
   background-color: var(--color-field-bg);
-  border: 2px solid var(--color-panel-border);
-  border-radius: var(--radius-sm);
-
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 

@@ -1,10 +1,7 @@
 // ============================================================
 // [FILE: core/js/render.js]
 // Canvas 2D отрисовка Pizza Catch.
-// Верхняя панель (две строки):
-//   верхняя — таймер/промахи (слева), рекорд/счёт (справа)
-//   нижняя  — ингредиенты рецепта (на всю ширину)
-// Лейны: вертикальный градиент. Зоны тапа: только круги.
+// Миска: вспышка зелёным (good) / красным (bad).
 // ============================================================
 
 import { config } from './config.js';
@@ -114,9 +111,6 @@ export function createRenderer(canvas, callbacks = {}) {
     conveyorBottom = config.CONVEYOR_BOTTOM_RATIO * H;
 
     itemSize = config.ITEM_SIZE_RATIO * minWH;
-
-    // Размер иконки рецепта — от ширины, т.к. нижняя строка теперь
-    // на всю ширину W.
     recipeItemSize = config.RECIPE_ITEM_SIZE_RATIO * W;
 
     laneWidth = config.LANE_WIDTH_RATIO * W;
@@ -268,7 +262,7 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Конвейер: вертикальный градиент.
+  // Конвейер
   // ----------------------------------------------------------
   function drawConveyor(lx, isActive) {
     const halfW = laneWidth / 2;
@@ -300,51 +294,84 @@ export function createRenderer(canvas, callbacks = {}) {
     }
   }
 
-  function drawBowl(cx, cy, grabFlash) {
-    const flashScale = grabFlash > 0 ? 1.05 : 1;
-    const rx = 45 * flashScale;
+  // ----------------------------------------------------------
+  // Миска с вспышкой
+  // ----------------------------------------------------------
+  function drawBowl(cx, cy, bowlFlash) {
+    let scale = 1;
+    let dx = 0;
+    let flashColor = null;
+    let flashPulse = 0;
 
+    if (bowlFlash) {
+      // sin(π * progress) — 0 → 1 → 0. Мягкое «моргание».
+      flashPulse = Math.sin(Math.PI * bowlFlash.progress);
+
+      if (bowlFlash.kind === 'good') {
+        flashColor = COLORS.bowlFlashGood;
+        scale = 1 + 0.10 * flashPulse;       // лёгкое увеличение
+      } else {
+        flashColor = COLORS.bowlFlashBad;
+        scale = 1 - 0.05 * flashPulse;       // лёгкое уменьшение
+        dx = Math.sin(bowlFlash.progress * 40) * 2 * flashPulse; // дрожание
+      }
+    }
+
+    const bx = cx + dx;
+    const rx = 45 * scale;
+
+    // базовые цвета
+    const bodyColor  = flashColor ? mixColor(COLORS.bowlBody,  flashColor, 0.35 * flashPulse) : COLORS.bowlBody;
+    const rimColor   = flashColor ? mixColor(COLORS.bowlRim,   flashColor, 0.35 * flashPulse) : COLORS.bowlRim;
+    const innerColor = flashColor ? mixColor(COLORS.bowlInner, flashColor, 0.35 * flashPulse) : COLORS.bowlInner;
+    const borderColor = flashColor || COLORS.bowlBorder;
+
+    // тень
     ctx.beginPath();
-    ctx.ellipse(cx, cy + 12, rx, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(bx, cy + 12, rx, 10, 0, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.bowlShadow;
     ctx.fill();
 
+    // тело
     ctx.beginPath();
-    ctx.moveTo(cx - rx, cy - 15);
-    ctx.lineTo(cx + rx, cy - 15);
-    ctx.quadraticCurveTo(cx + rx, cy + 35, cx, cy + 35);
-    ctx.quadraticCurveTo(cx - rx, cy + 35, cx - rx, cy - 15);
+    ctx.moveTo(bx - rx, cy - 15);
+    ctx.lineTo(bx + rx, cy - 15);
+    ctx.quadraticCurveTo(bx + rx, cy + 35, bx, cy + 35);
+    ctx.quadraticCurveTo(bx - rx, cy + 35, bx - rx, cy - 15);
     ctx.closePath();
-    ctx.fillStyle = COLORS.bowlBody;
+    ctx.fillStyle = bodyColor;
     ctx.fill();
-    ctx.strokeStyle = COLORS.bowlBorder;
+    ctx.strokeStyle = borderColor;
     ctx.lineWidth = 3;
     ctx.stroke();
 
+    // обод
     ctx.beginPath();
-    ctx.ellipse(cx, cy - 15, rx, 10, 0, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.bowlRim;
+    ctx.ellipse(bx, cy - 15, rx, 10, 0, 0, Math.PI * 2);
+    ctx.fillStyle = rimColor;
     ctx.fill();
-    ctx.strokeStyle = COLORS.bowlBorder;
+    ctx.strokeStyle = borderColor;
     ctx.lineWidth = 3;
     ctx.stroke();
 
+    // внутреннее дно
     ctx.beginPath();
-    ctx.ellipse(cx, cy - 15, rx * 0.85, 7, 0, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.bowlInner;
+    ctx.ellipse(bx, cy - 15, rx * 0.85, 7, 0, 0, Math.PI * 2);
+    ctx.fillStyle = innerColor;
     ctx.fill();
     ctx.strokeStyle = COLORS.bowlInnerBorder;
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
+    // блик
     ctx.beginPath();
-    ctx.ellipse(cx - 20, cy - 16, 12, 3, 0, 0, Math.PI * 2);
+    ctx.ellipse(bx - 20, cy - 16, 12, 3, 0, 0, Math.PI * 2);
     ctx.fillStyle = COLORS.bowlHighlight;
     ctx.fill();
   }
 
   // ----------------------------------------------------------
-  // Зоны тапа: только круги.
+  // Зоны тапа
   // ----------------------------------------------------------
   function drawPositionMarkers(currentPos) {
     const zones = getTapZones();
@@ -371,20 +398,16 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Верхняя панель: две строки.
-  //   верхняя — таймер/промахи (слева), рекорд/счёт (справа)
-  //   нижняя  — ингредиенты рецепта на всю ширину
+  // Верхняя панель
   // ----------------------------------------------------------
   function drawRecipe(state) {
     const { recipe, collected, score, misses } = state;
 
     const panelH = hudTopH + hudRecipeH + 8;
 
-    // фон панели
     ctx.fillStyle = COLORS.recipeBg;
     ctx.fillRect(0, 0, W, panelH);
 
-    // разделительная линия между строками
     ctx.strokeStyle = COLORS.recipeBorder;
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -392,19 +415,15 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineTo(W - hudPadding, recipeY);
     ctx.stroke();
 
-    // нижняя граница панели
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, panelH);
     ctx.lineTo(W, panelH);
     ctx.stroke();
 
-    // ==========================================================
-    // ВЕРХНЯЯ СТРОКА: тексты
-    // ==========================================================
     const topCenterY = recipeY / 2;
 
-    // ---------- СЛЕВА: таймер + промахи ----------
+    // СЛЕВА: таймер + промахи
     const timeLeftMs = getRemainingMs();
     const totalSec = Math.ceil(timeLeftMs / 1000);
     const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
@@ -413,15 +432,12 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
-    // таймер — крупно, слева по центру верхней строки
     ctx.fillStyle = COLORS.recipeText;
     ctx.font = 'bold 20px monospace';
     ctx.fillText(`${mm}:${ss}`, hudPadding, topCenterY);
 
-    // ширина таймера — чтобы отодвинуть промахи вправо
     const timerW = ctx.measureText(`${mm}:${ss}`).width;
 
-    // промахи — справа от таймера, мельче
     ctx.fillStyle = misses >= config.MAX_MISSES - 1
       ? COLORS.missesDanger
       : COLORS.missesText;
@@ -432,19 +448,17 @@ export function createRenderer(canvas, callbacks = {}) {
       topCenterY
     );
 
-    // ---------- СПРАВА: рекорд + счёт ----------
+    // СПРАВА: рекорд + счёт
     const best = getBestScore();
 
     ctx.textAlign = 'right';
 
-    // счёт — крупно, справа
     ctx.fillStyle = COLORS.scoreText;
     ctx.font = 'bold 18px monospace';
     ctx.fillText(`СЧЁТ ${score}`, W - hudPadding, topCenterY);
 
     const scoreW = ctx.measureText(`СЧЁТ ${score}`).width;
 
-    // рекорд — левее счёта, помельче
     ctx.fillStyle = COLORS.recipeText;
     ctx.font = 'bold 12px monospace';
     ctx.fillText(
@@ -455,11 +469,8 @@ export function createRenderer(canvas, callbacks = {}) {
 
     ctx.textBaseline = 'alphabetic';
 
-    // ==========================================================
-    // НИЖНЯЯ СТРОКА: ингредиенты рецепта (на всю ширину)
-    // ==========================================================
+    // НИЖНЯЯ СТРОКА: рецепт
     const len = recipe.length;
-
     const leftBound  = hudPadding;
     const rightBound = W - hudPadding;
     const availableWidth = Math.max(0, rightBound - leftBound);
@@ -618,35 +629,78 @@ export function createRenderer(canvas, callbacks = {}) {
       dishX = laneX[state.currentPos];
       dishY = conveyorBottom + 40;
     }
-    drawBowl(dishX, dishY, state.grabFlash);
-
+    drawBowl(dishX, dishY, state.bowlFlash);
+/*
     if (state.currentPos === 3) {
       ctx.fillStyle = 'rgba(0,0,0,0.5)';
       ctx.font = 'bold 12px monospace';
       ctx.textAlign = 'center';
       ctx.fillText('ОЖИДАНИЕ', dishX, dishY + 55);
     }
-
+*/
     if (state.pizzaAnim) drawPizzaAnim(state.pizzaAnim);
     if (state.over) drawGameOver(state);
   }
 
+  // ----------------------------------------------------------
+  // Цветовые утилиты
+  // ----------------------------------------------------------
   function withAlpha(color, a) {
+    const c = parseColor(color);
+    if (!c) return color;
+    return `rgba(${c.r},${c.g},${c.b},${a})`;
+  }
+
+  function mixColor(c1, c2, t) {
+    const a = parseColor(c1);
+    const b = parseColor(c2);
+    if (!a || !b) return c1;
+    t = Math.max(0, Math.min(1, t));
+    const r = Math.round(a.r + (b.r - a.r) * t);
+    const g = Math.round(a.g + (b.g - a.g) * t);
+    const bl = Math.round(a.b + (b.b - a.b) * t);
+    const al = a.a + (b.a - a.a) * t;
+    return `rgba(${r},${g},${bl},${al})`;
+  }
+
+  function parseColor(color) {
+    if (!color) return null;
+    color = color.trim();
+
     if (color.startsWith('#')) {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
-      return `rgba(${r},${g},${b},${a})`;
+      let hex = color.slice(1);
+      if (hex.length === 3) {
+        hex = hex.split('').map(ch => ch + ch).join('');
+      }
+      if (hex.length === 6) {
+        return {
+          r: parseInt(hex.slice(0, 2), 16),
+          g: parseInt(hex.slice(2, 4), 16),
+          b: parseInt(hex.slice(4, 6), 16),
+          a: 1,
+        };
+      }
+      if (hex.length === 8) {
+        return {
+          r: parseInt(hex.slice(0, 2), 16),
+          g: parseInt(hex.slice(2, 4), 16),
+          b: parseInt(hex.slice(4, 6), 16),
+          a: parseInt(hex.slice(6, 8), 16) / 255,
+        };
+      }
+      return null;
     }
-    if (color.startsWith('rgba(')) {
-      const parts = color.slice(5, -1).split(',').map(s => s.trim());
-      return `rgba(${parts[0]},${parts[1]},${parts[2]},${a})`;
-    }
-    if (color.startsWith('rgb(')) {
-      const parts = color.slice(4, -1).split(',').map(s => s.trim());
-      return `rgba(${parts[0]},${parts[1]},${parts[2]},${a})`;
-    }
-    return color;
+
+    const m = color.match(/^rgba?\(([^)]+)\)$/);
+    if (!m) return null;
+    const parts = m[1].split(',').map(s => parseFloat(s.trim()));
+    if (parts.length < 3) return null;
+    return {
+      r: parts[0],
+      g: parts[1],
+      b: parts[2],
+      a: parts.length >= 4 ? parts[3] : 1,
+    };
   }
 
   function ALL_INGR_BY_ID(id) {

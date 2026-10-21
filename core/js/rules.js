@@ -1,11 +1,6 @@
 // ============================================================
 // [FILE: core/js/rules.js]
-// Правила Pizza Catch. Не знает о DOM/canvas.
-// Контракт для core/loop.js:
-//   reset(), showPreview(), tick(dt), setPosition(pos),
-//   getState(), getScore(), isOver(), setFieldSize(w, h)
-// tick(dt) — dt в миллисекундах. Возвращает:
-//   { event: 'gameover'|'score'|'pizza'|null }
+// Правила Pizza Catch.
 // ============================================================
 
 import { config } from './config.js';
@@ -21,9 +16,6 @@ function pick(arr) { return arr[randInt(arr.length)]; }
 
 export function createRules() {
 
-  // ----------------------------------------------------------
-  // Состояние
-  // ----------------------------------------------------------
   let lanes = [];
   let laneSpawnTimer = [];
   let currentPos = 3;
@@ -36,7 +28,7 @@ export function createRules() {
   let collected = [];
 
   let pizzaAnim = null;
-  let grabFlash = 0;
+  let bowlFlash = null;          // { kind: 'good'|'bad', startTime, duration }
   let conveyorOffset = 0;
 
   let fieldW = 520;
@@ -64,6 +56,30 @@ export function createRules() {
 
     recipe = picks.map(i => i.id);
     collected = [];
+  }
+
+  // ----------------------------------------------------------
+  // Вспышка миски
+  // ----------------------------------------------------------
+  function triggerBowlFlash(kind) {
+    bowlFlash = {
+      kind,
+      startTime: performance.now(),
+      duration: config.BOWL_FLASH_MS,
+    };
+  }
+
+  function getBowlFlashState() {
+    if (!bowlFlash) return null;
+    const elapsed = performance.now() - bowlFlash.startTime;
+    if (elapsed >= bowlFlash.duration) {
+      bowlFlash = null;
+      return null;
+    }
+    return {
+      kind: bowlFlash.kind,
+      progress: elapsed / bowlFlash.duration,   // 0..1
+    };
   }
 
   // ----------------------------------------------------------
@@ -102,41 +118,40 @@ export function createRules() {
   // ----------------------------------------------------------
   function handleCatch(laneIdx, obj) {
     const ingr = obj.ingr;
-    grabFlash = 200;
 
     const idx = lanes[laneIdx].indexOf(obj);
     if (idx !== -1) lanes[laneIdx].splice(idx, 1);
 
-    let event = null;
-
+    // Плохой ингредиент — красная вспышка, промах.
     if (ingr.id === 'bad') {
+      triggerBowlFlash('bad');
       misses++;
-      event = 'score';
       if (misses >= config.MAX_MISSES) over = true;
       return { event: over ? 'gameover' : 'score' };
     }
 
+    // Не тот по рецепту — красная вспышка, промах.
     const nextNeeded = recipe[collected.length];
-    if (ingr.id === nextNeeded) {
-      score += config.SCORE_PER_INGREDIENT;
-      collected.push(nextNeeded);
-
-      if (collected.length === recipe.length) {
-        score += config.SCORE_PER_PIZZA;
-        pizzasMade++;
-        pizzaAnim = { startTime: performance.now() };
-        event = 'pizza';
-      } else {
-        event = 'score';
-      }
-    } else {
+    if (ingr.id !== nextNeeded) {
+      triggerBowlFlash('bad');
       misses++;
-      event = 'score';
       if (misses >= config.MAX_MISSES) over = true;
       return { event: over ? 'gameover' : 'score' };
     }
 
-    return { event };
+    // Правильный ингредиент — зелёная вспышка, +очки.
+    triggerBowlFlash('good');
+    score += config.SCORE_PER_INGREDIENT;
+    collected.push(nextNeeded);
+
+    if (collected.length === recipe.length) {
+      score += config.SCORE_PER_PIZZA;
+      pizzasMade++;
+      pizzaAnim = { startTime: performance.now() };
+      return { event: 'pizza' };
+    }
+
+    return { event: 'score' };
   }
 
   function checkImmediateGrab() {
@@ -166,7 +181,8 @@ export function createRules() {
       return { event: null };
     }
 
-    if (grabFlash > 0) grabFlash = Math.max(0, grabFlash - dt);
+    // Чистим просроченную вспышку.
+    getBowlFlashState();
 
     const speed = fallSpeedPxPerSec();
     conveyorOffset = (conveyorOffset + (speed * dt) / 1000) % 1;
@@ -213,7 +229,7 @@ export function createRules() {
     pizzasMade = 0;
     over = false;
     pizzaAnim = null;
-    grabFlash = 0;
+    bowlFlash = null;
     conveyorOffset = 0;
     newRecipe();
     return getState();
@@ -228,7 +244,7 @@ export function createRules() {
     pizzasMade = 0;
     over = false;
     pizzaAnim = null;
-    grabFlash = 0;
+    bowlFlash = null;
     conveyorOffset = 0;
     newRecipe();
     return getState();
@@ -261,13 +277,11 @@ export function createRules() {
             duration: config.PIZZA_ANIM_MS,
           }
         : null,
-      grabFlash,
+      bowlFlash: getBowlFlashState(),
       conveyorOffset,
     };
   }
 
-  // Инициализация: пустые лейны и рецепт, чтобы getState() был
-  // валиден до первого reset()/showPreview().
   lanes = Array.from({ length: config.LANE_COUNT }, () => []);
   laneSpawnTimer = [Infinity, Infinity, Infinity];
   newRecipe();

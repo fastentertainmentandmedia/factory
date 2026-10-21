@@ -12,18 +12,15 @@ export const config = {
 
   LANE_X_RATIOS: [0.20, 0.50, 0.80],
 
-  // Верхняя панель: две строки.
-  //   верхняя — тексты (таймер/промахи/рекорд/счёт)
-  //   нижняя  — ингредиенты рецепта
   HUD_TOP_H_RATIO:      0.09,
   HUD_RECIPE_H_RATIO:   0.09,
-  HUD_PADDING_RATIO:    0.03,   // гориз. отступ рецепта от краёв (доля W)
+  HUD_PADDING_RATIO:    0.03,
 
-  CONVEYOR_TOP_RATIO:    0.20,   // было 0.15 — панель выше
+  CONVEYOR_TOP_RATIO:    0.20,
   CONVEYOR_BOTTOM_RATIO: 0.64,
 
   ITEM_SIZE_RATIO:        0.11,
-  RECIPE_ITEM_SIZE_RATIO: 0.10,   // теперь доля от W (не от minWH)
+  RECIPE_ITEM_SIZE_RATIO: 0.10,
   LANE_WIDTH_RATIO:       0.20,
   TAP_RADIUS_RATIO:       0.13,
 
@@ -46,6 +43,9 @@ export const config = {
   BAD_INGREDIENT_CHANCE: 0.20,
 
   PIZZA_ANIM_MS: 1500,
+
+  // Длительность вспышки миски при попадании (мс).
+  BOWL_FLASH_MS: 260,
 
   // ----------------------------------------------------------
   // Скорость и спавн (FPS-независимо)
@@ -87,6 +87,8 @@ export const config = {
     bowlBorder:      { var: '--color-bowl-border',     fallback: '#555555' },
     bowlShadow:      { var: '--color-bowl-shadow',     fallback: 'rgba(0,0,0,0.15)' },
     bowlHighlight:   { var: '--color-bowl-highlight',  fallback: 'rgba(255,255,255,0.7)' },
+    bowlFlashGood:   { var: '--color-bowl-flash-good', fallback: '#38b24a' },
+    bowlFlashBad:    { var: '--color-bowl-flash-bad',  fallback: '#d22b2b' },
 
     zoneFill:        { var: '--color-zone-fill',       fallback: 'rgba(0,120,255,1)' },
     zoneBorder:      { var: '--color-zone-border',     fallback: 'rgba(0,100,200,1)' },

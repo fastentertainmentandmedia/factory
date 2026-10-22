@@ -42,7 +42,6 @@ export function createRules() {
   let bowlFlash = null;
   let conveyorOffset = 0;
 
-  // Anti-repeat: id последних N спавнов (глобально)
   let recentSpawns = [];
 
   let fieldW = 520;
@@ -67,7 +66,6 @@ export function createRules() {
     const starterTake = Math.min(STARTER_COUNT, starterPool.length, len);
     const starters = shuffle(starterPool).slice(0, starterTake);
 
-    // Исключаем ВСЮ группу starter из остальных.
     const restPool = ALL_GOOD.filter(x => !STARTER_GROUP_SET.has(x.id));
     const freeSlots = Math.max(0, len - starterTake);
     const restPicks = shuffle(restPool).slice(0, freeSlots);
@@ -114,18 +112,34 @@ export function createRules() {
   }
 
   // ----------------------------------------------------------
-  // Спавн
+  // Спавн.
+  // Пулы:
+  //   - "нужные"  — оставшиеся по рецепту
+  //   - "лишние"  — все хорошие, кроме оставшихся по рецепту
+  // Доля "лишних" — EXTRA_SPAWN_CHANCE.
+  // Anti-repeat применяется к выбранному пулу.
   // ----------------------------------------------------------
   function pickIngredientForSpawn(laneIdx) {
     if (Math.random() < config.BAD_INGREDIENT_CHANCE) return BAD_INGREDIENT;
 
     const remaining = recipe.slice(collected.length);
+    const neededSet = new Set(remaining);
 
-    let pool = remaining.length > 0
-      ? remaining.map(id => ALL_GOOD.find(x => x.id === id)).filter(Boolean)
-      : ALL_GOOD.slice();
+    let pool;
+    const wantExtra = Math.random() < (config.EXTRA_SPAWN_CHANCE || 0);
 
-    // Глобальный anti-repeat: исключить последние N id
+    if (wantExtra && ALL_GOOD.length > remaining.length) {
+      // «лишние»: все, кроме ещё нужных
+      pool = ALL_GOOD.filter(x => !neededSet.has(x.id));
+      if (pool.length === 0) pool = ALL_GOOD.slice();
+    } else if (remaining.length > 0) {
+      // «нужные»
+      pool = remaining.map(id => ALL_GOOD.find(x => x.id === id)).filter(Boolean);
+    } else {
+      pool = ALL_GOOD.slice();
+    }
+
+    // Anti-repeat: глобальный
     const n = config.SPAWN_ANTI_REPEAT || 0;
     if (n > 0 && recentSpawns.length > 0) {
       const banned = new Set(recentSpawns);
@@ -133,7 +147,7 @@ export function createRules() {
       if (filtered.length > 0) pool = filtered;
     }
 
-    // Per-lane anti-repeat: не тот же, что последний на лейне
+    // Anti-repeat: per-lane
     const perLane = config.SPAWN_ANTI_REPEAT_PER_LANE || 0;
     if (perLane > 0 && laneIdx != null) {
       const lastId = lastOnLane(laneIdx);
@@ -176,6 +190,10 @@ export function createRules() {
 
     if (isBad(ingr)) {
       triggerBowlFlash('bad');
+      if (config.BAD_INSTANT_GAME_OVER) {
+        over = true;
+        return { event: 'gameover' };
+      }
       misses++;
       if (misses >= config.MAX_MISSES) over = true;
       return { event: over ? 'gameover' : 'score' };

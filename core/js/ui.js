@@ -88,7 +88,7 @@ export function createUI() {
 
     // База — от ШИРИНЫ поля (диапазон уже, чем у высоты).
     // Ограничение 12..20 px сглаживает крайности.
-    const raw = w * 0.031;
+    const raw = w * 0.030;
     const px = Math.round(Math.min(20, Math.max(12, raw)));
 
     $.hudLayer.style.setProperty('--hud-font-size', px + 'px');

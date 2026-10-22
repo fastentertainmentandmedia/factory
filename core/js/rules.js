@@ -1,17 +1,28 @@
 // ============================================================
 // [FILE: core/js/rules.js]
-// Правила Pizza Catch.
 // ============================================================
 
 import { config } from './config.js';
+import { gameConfig } from '../../game/js/config.js';
 
-const INGREDIENTS = config.COLORS.ingredients;
-const BAD_INGREDIENT = config.COLORS.badIngredient;
-const ALL_GOOD = INGREDIENTS;
+const ALL_GOOD = gameConfig.INGREDIENTS;
+const BAD_INGREDIENT = gameConfig.BAD_INGREDIENT;
+const STARTER_GROUP = gameConfig.STARTER_GROUP || [];
+const STARTER_GROUP_SET = new Set(STARTER_GROUP);
+const STARTER_COUNT = gameConfig.STARTER_COUNT || 0;
 
 
 function randInt(n) { return Math.floor(Math.random() * n); }
 function pick(arr) { return arr[randInt(arr.length)]; }
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randInt(i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function isBad(ingr) { return !!(ingr && (ingr.bad === true || ingr.id === 'danger')); }
 
 
 export function createRules() {
@@ -40,21 +51,26 @@ export function createRules() {
   }
 
   // ----------------------------------------------------------
-  // Рецепт
+  // Рецепт: длина случайная; ровно STARTER_COUNT из STARTER_GROUP;
+  // остальные — случайные из НЕ-starter ингредиентов.
   // ----------------------------------------------------------
   function newRecipe() {
     const len = config.MIN_RECIPE_LEN +
                 randInt(config.MAX_RECIPE_LEN - config.MIN_RECIPE_LEN + 1);
 
-    const dough = ALL_GOOD.find(i => i.id === 'dough');
-    const rest = ALL_GOOD.filter(i => i.id !== 'dough');
-    const shuffled = [...rest].sort(() => Math.random() - 0.5);
+    const starterPool = STARTER_GROUP
+      .map(id => ALL_GOOD.find(x => x.id === id))
+      .filter(Boolean);
 
-    const picks = [dough];
-    const takeCount = Math.min(len - 1, shuffled.length);
-    for (let i = 0; i < takeCount; i++) picks.push(shuffled[i]);
+    const starterTake = Math.min(STARTER_COUNT, starterPool.length, len);
+    const starters = shuffle(starterPool).slice(0, starterTake);
 
-    recipe = picks.map(i => i.id);
+    // Из остальных исключаем ВСЮ группу starter, а не только выбранные.
+    const restPool = ALL_GOOD.filter(x => !STARTER_GROUP_SET.has(x.id));
+    const freeSlots = Math.max(0, len - starterTake);
+    const restPicks = shuffle(restPool).slice(0, freeSlots);
+
+    recipe = shuffle([...starters, ...restPicks]).map(x => x.id);
     collected = [];
   }
 
@@ -76,10 +92,7 @@ export function createRules() {
       bowlFlash = null;
       return null;
     }
-    return {
-      kind: bowlFlash.kind,
-      progress: elapsed / bowlFlash.duration,
-    };
+    return { kind: bowlFlash.kind, progress: elapsed / bowlFlash.duration };
   }
 
   // ----------------------------------------------------------
@@ -122,7 +135,7 @@ export function createRules() {
     const idx = lanes[laneIdx].indexOf(obj);
     if (idx !== -1) lanes[laneIdx].splice(idx, 1);
 
-    if (ingr.id === 'bad') {
+    if (isBad(ingr)) {
       triggerBowlFlash('bad');
       misses++;
       if (misses >= config.MAX_MISSES) over = true;
@@ -173,18 +186,14 @@ export function createRules() {
       if (performance.now() - pizzaAnim.startTime > config.PIZZA_ANIM_MS) {
         pizzaAnim = null;
         newRecipe();
-
-        // После сборки пиццы — чаша в нейтральное положение.
         if (config.RESET_POSITION_AFTER_PIZZA) {
           currentPos = 3;
         }
-
         return { event: 'score' };
       }
       return { event: null };
     }
 
-    // Чистим просроченную вспышку.
     getBowlFlashState();
 
     const speed = fallSpeedPxPerSec();
@@ -261,8 +270,8 @@ export function createRules() {
     return r || { event: null };
   }
 
-  function getScore()     { return score; }
-  function isOver()       { return over; }
+  function getScore() { return score; }
+  function isOver()   { return over; }
 
   function getState() {
     return {

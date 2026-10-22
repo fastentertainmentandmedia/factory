@@ -1,8 +1,8 @@
 // ============================================================
 // [FILE: core/js/render.js]
-// Лейны: градиент + текстура точек, синхронизированная со
-// скоростью ленты (BASE_FALL_SPEED, SPEED_PER_PIZZA) через
-// TEXTURE_SYNC_FACTOR (< 1 — медленнее, без ряби).
+// Ингредиенты — из gameConfig.INGREDIENTS (id/src/fallback).
+// Вписывание в слот — через INGREDIENT_FIT / FIT_SCALE /
+// FIT_PADDING / FIT_OVERRIDES (всё в game/js/config.js).
 // ============================================================
 
 import { config } from './config.js';
@@ -13,12 +13,6 @@ import { drawProceduralIngredient } from './ingredient-drawers.js';
 function readColor(el, spec) {
   const v = el.getPropertyValue(spec.var).trim();
   return v || spec.fallback;
-}
-
-function readIngredientColors(style, spec) {
-  const color  = style.getPropertyValue(spec.colorVar).trim()  || spec.fallback.color;
-  const border = style.getPropertyValue(spec.borderVar).trim() || spec.fallback.border;
-  return { id: spec.id, color, border, bad: spec.id === 'bad' };
 }
 
 
@@ -45,38 +39,47 @@ export function createRenderer(canvas, callbacks = {}) {
   let waitY = 0;
   let markersY = 0;
 
-  // Текстура
   let texturePeriodPx = 0;
   let texturePatternCanvas = null;
   let texturePattern = null;
-  let textureOffset = 0;        // 0..1 (доля периода)
-  let lastTextureTs = 0;        // performance.now() предыдущего кадра
+  let textureOffset = 0;
+  let lastTextureTs = 0;
 
   let COLORS = {};
-  let ING_COLORS = {};
-  let BAD_COLOR = null;
   let HUD_FONT = 'monospace';
 
-  const ING_IMAGES = {};
-  const ING_IMAGES_READY = {};
+  // ----------------------------------------------------------
+  // Ингредиенты: карта id → { ingr, img, ready }
+  // ----------------------------------------------------------
+  const ING = {};       // id → { ingr, img, ready }
+  let BAD_INGR = null;  // { id, src, fallback, img, ready }
 
   (function loadIngredientImages() {
-    const paths = gameConfig?.ASSETS?.ingredients || {};
-    for (const [id, src] of Object.entries(paths)) {
-      if (!src) continue;
-      const img = new Image();
-      img.onload = () => {
-        ING_IMAGES_READY[id] = true;
-        onImageReady();
-      };
-      img.onerror = () => {};
-      img.src = src;
-      ING_IMAGES[id] = img;
+    const list = [
+      ...(gameConfig.INGREDIENTS || []),
+      ...(gameConfig.BAD_INGREDIENT ? [gameConfig.BAD_INGREDIENT] : []),
+    ];
+
+    for (const ingr of list) {
+      const entry = { ingr, img: null, ready: false };
+      if (ingr.src) {
+        const img = new Image();
+        img.onload = () => { entry.ready = true; onImageReady(); };
+        img.onerror = () => {};
+        img.src = ingr.src;
+        entry.img = img;
+      }
+      ING[ingr.id] = entry;
+    }
+
+    if (gameConfig.BAD_INGREDIENT) {
+      BAD_INGR = ING[gameConfig.BAD_INGREDIENT.id];
     }
   })();
 
-  function hasSvgFor(id) {
-    return !!(ING_IMAGES[id] && ING_IMAGES_READY[id]);
+  function hasImgFor(id) {
+    const e = ING[id];
+    return !!(e && e.img && e.ready);
   }
 
   // ----------------------------------------------------------
@@ -87,17 +90,9 @@ export function createRenderer(canvas, callbacks = {}) {
 
     const C = {};
     for (const [key, spec] of Object.entries(config.COLORS)) {
-      if (key === 'ingredients' || key === 'badIngredient') continue;
       C[key] = readColor(style, spec);
     }
     COLORS = C;
-
-    ING_COLORS = {};
-    for (const spec of config.COLORS.ingredients) {
-      const c = readIngredientColors(style, spec);
-      ING_COLORS[c.id] = c;
-    }
-    BAD_COLOR = readIngredientColors(style, config.COLORS.badIngredient);
 
     const fontRaw = style.getPropertyValue('--font-mono').trim();
     HUD_FONT = fontRaw || "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
@@ -106,15 +101,14 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Текстура: offscreen-canvas с точками.
+  // Текстура
   // ----------------------------------------------------------
   function buildTexturePattern() {
-    if (!config.TEXTURE_ENABLED) {
+    if (!config.TEXTURE_ENABLED || texturePeriodPx <= 0) {
       texturePattern = null;
       texturePatternCanvas = null;
       return;
     }
-    if (texturePeriodPx <= 0) return;
 
     const period = Math.max(6, Math.round(texturePeriodPx));
     const dot = Math.max(1, Math.round(period * config.TEXTURE_DOT_RATIO));
@@ -130,22 +124,15 @@ export function createRenderer(canvas, callbacks = {}) {
     const parsed = parseColor(base);
     const alpha = config.TEXTURE_ALPHA;
 
-    if (parsed) {
-      pctx.fillStyle = `rgba(${parsed.r},${parsed.g},${parsed.b},${alpha})`;
-    } else {
-      pctx.fillStyle = base;
-    }
+    pctx.fillStyle = parsed
+      ? `rgba(${parsed.r},${parsed.g},${parsed.b},${alpha})`
+      : base;
 
     pctx.beginPath();
     pctx.arc(period / 2, period / 2, dot / 2, 0, Math.PI * 2);
     pctx.fill();
 
     texturePattern = ctx.createPattern(texturePatternCanvas, 'repeat');
-  }
-
-  function ingrColors(ingr) {
-    if (ingr && ingr.id === 'bad') return BAD_COLOR;
-    return ING_COLORS[ingr?.id] || { id: ingr?.id, color: '#ccc', border: '#666' };
   }
 
   // ----------------------------------------------------------
@@ -197,18 +184,17 @@ export function createRenderer(canvas, callbacks = {}) {
   // Ингредиент
   // ----------------------------------------------------------
   function drawIngredient(cx, cy, ingr, size) {
-    if (ingr && hasSvgFor(ingr.id)) {
-      const img = ING_IMAGES[ingr.id];
-      const iw = img.naturalWidth  || size;
-      const ih = img.naturalHeight || size;
-      const scale = Math.min(size / iw, size / ih);
-      const dw = iw * scale;
-      const dh = ih * scale;
-      ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+    const fitSpec = getFitSpec(ingr.id);
+
+    // 1) картинка
+    const entry = ING[ingr.id];
+    if (entry && entry.img && entry.ready) {
+      drawImageFitted(ctx, entry.img, cx, cy, size, fitSpec);
       return;
     }
 
-    const c = ingrColors(ingr);
+    // 2) процедурный fallback
+    const c = ingr.fallback || { color: '#ccc', border: '#666' };
     const r = size / 2;
 
     ctx.save();
@@ -232,8 +218,45 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.restore();
   }
 
+  function getFitSpec(id) {
+    const ov = (gameConfig.INGREDIENT_FIT_OVERRIDES || {})[id] || {};
+    return {
+      fit:   ov.fit   || gameConfig.INGREDIENT_FIT   || 'contain',
+      scale: ov.scale || gameConfig.INGREDIENT_FIT_SCALE || 1,
+      padding: (ov.padding !== undefined)
+        ? ov.padding
+        : (gameConfig.INGREDIENT_FIT_PADDING || 0),
+    };
+  }
+
+  function drawImageFitted(ctx, img, cx, cy, size, spec) {
+    const iw = img.naturalWidth  || size;
+    const ih = img.naturalHeight || size;
+
+    const inner = size * (1 - spec.padding * 2);
+    const box = inner * spec.scale;
+
+    let dw, dh;
+
+    if (spec.fit === 'cover') {
+      const s = Math.max(box / iw, box / ih);
+      dw = iw * s;
+      dh = ih * s;
+    } else if (spec.fit === 'fill') {
+      dw = box;
+      dh = box;
+    } else {
+      // 'contain'
+      const s = Math.min(box / iw, box / ih);
+      dw = iw * s;
+      dh = ih * s;
+    }
+
+    ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
+  }
+
   // ----------------------------------------------------------
-  // Конвейер: градиент + текстура (offsetPx — в пикселях).
+  // Конвейер: градиент + текстура (синхронизирована со лентой)
   // ----------------------------------------------------------
   function drawConveyor(lx, isActive, offsetPx) {
     const halfW = laneWidth / 2;
@@ -248,7 +271,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fillStyle = grad;
     ctx.fillRect(left, conveyorTop, width, height);
 
-    // текстура
     if (config.TEXTURE_ENABLED && texturePattern && texturePeriodPx > 0) {
       ctx.save();
       ctx.beginPath();
@@ -257,17 +279,11 @@ export function createRenderer(canvas, callbacks = {}) {
 
       ctx.translate(0, offsetPx);
       ctx.fillStyle = texturePattern;
-      ctx.fillRect(
-        left,
-        conveyorTop - texturePeriodPx,
-        width,
-        height + texturePeriodPx * 2
-      );
+      ctx.fillRect(left, conveyorTop - texturePeriodPx, width, height + texturePeriodPx * 2);
 
       ctx.restore();
     }
 
-    // границы
     ctx.strokeStyle = COLORS.conveyorBorder;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -286,7 +302,7 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Миска с вспышкой
+  // Миска
   // ----------------------------------------------------------
   function drawBowl(cx, cy, bowlFlash) {
     let scale = 1;
@@ -296,7 +312,6 @@ export function createRenderer(canvas, callbacks = {}) {
 
     if (bowlFlash) {
       flashPulse = Math.sin(Math.PI * bowlFlash.progress);
-
       if (bowlFlash.kind === 'good') {
         flashColor = COLORS.bowlFlashGood;
         scale = 1 + 0.10 * flashPulse;
@@ -411,12 +426,12 @@ export function createRenderer(canvas, callbacks = {}) {
 
     for (let i = 0; i < len; i++) {
       const id = recipe[i];
-      const ingr = ALL_INGR_BY_ID(id);
+      const ingr = INGR_BY_ID(id);
       const ix = startX + i * gap;
 
-      const hasSvg = hasSvgFor(ingr.id);
+      const hasImg = hasImgFor(ingr.id);
 
-      if (!hasSvg) {
+      if (!hasImg) {
         ctx.beginPath();
         ctx.arc(ix, iconY, iconSize/2 + 2, 0, Math.PI * 2);
         ctx.fillStyle = COLORS.recipeIconBg;
@@ -533,22 +548,17 @@ export function createRenderer(canvas, callbacks = {}) {
 
     drawRecipe(state);
 
-    // ---- текстура: один раз на кадр ----
     let textureOffsetPx = 0;
     if (config.TEXTURE_ENABLED && texturePattern && texturePeriodPx > 0) {
       const ts = performance.now();
       const dtSec = lastTextureTs ? (ts - lastTextureTs) / 1000 : 0;
       lastTextureTs = ts;
 
-      // скорость ингредиентов в долях H/сек (не зависит от H)
       const speedFracPerSec =
         (config.BASE_FALL_SPEED / 720) *
         (1 + (state.pizzasMade || 0) * config.SPEED_PER_PIZZA);
 
-      // скорость текстуры — пропорционально, но медленнее (SYNC_FACTOR)
       const textureFracPerSec = speedFracPerSec * config.TEXTURE_SYNC_FACTOR;
-
-      // периоды в секунду
       const periodsPerSec = textureFracPerSec / config.TEXTURE_PERIOD_RATIO;
 
       textureOffset = (textureOffset + dtSec * periodsPerSec) % 1;
@@ -625,24 +635,12 @@ export function createRenderer(canvas, callbacks = {}) {
 
     if (color.startsWith('#')) {
       let hex = color.slice(1);
-      if (hex.length === 3) {
-        hex = hex.split('').map(ch => ch + ch).join('');
-      }
+      if (hex.length === 3) hex = hex.split('').map(ch => ch + ch).join('');
       if (hex.length === 6) {
-        return {
-          r: parseInt(hex.slice(0, 2), 16),
-          g: parseInt(hex.slice(2, 4), 16),
-          b: parseInt(hex.slice(4, 6), 16),
-          a: 1,
-        };
+        return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16), a: 1 };
       }
       if (hex.length === 8) {
-        return {
-          r: parseInt(hex.slice(0, 2), 16),
-          g: parseInt(hex.slice(2, 4), 16),
-          b: parseInt(hex.slice(4, 6), 16),
-          a: parseInt(hex.slice(6, 8), 16) / 255,
-        };
+        return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16), a: parseInt(hex.slice(6, 8), 16) / 255 };
       }
       return null;
     }
@@ -651,19 +649,12 @@ export function createRenderer(canvas, callbacks = {}) {
     if (!m) return null;
     const parts = m[1].split(',').map(s => parseFloat(s.trim()));
     if (parts.length < 3) return null;
-    return {
-      r: parts[0],
-      g: parts[1],
-      b: parts[2],
-      a: parts.length >= 4 ? parts[3] : 1,
-    };
+    return { r: parts[0], g: parts[1], b: parts[2], a: parts.length >= 4 ? parts[3] : 1 };
   }
 
-  function ALL_INGR_BY_ID(id) {
-    const found = config.COLORS.ingredients.find(x => x.id === id);
-    if (found) return found;
-    if (id === 'bad') return config.COLORS.badIngredient;
-    return { id };
+  function INGR_BY_ID(id) {
+    const e = ING[id];
+    return e ? e.ingr : { id, fallback: { color: '#ccc', border: '#666' } };
   }
 
   recomputeGeometry();

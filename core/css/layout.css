@@ -113,29 +113,35 @@ canvas {
 
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;   /* или center или space-between */
 
-  padding: 0 calc(var(--hud-padding, 0.03) * 100%);
+  padding: 0 2%;                    /* было 3% — ближе к краям */
+  gap: 10%;                          /* минимальный зазор между группами */
 
   box-sizing: border-box;
+  min-width: 0;
 }
 
 .hud-left {
   display: flex;
   align-items: baseline;
-  gap: 0.9em;
+  gap: 2em;                       /* компактнее внутри */
   white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .hud-right {
   display: flex;
   align-items: baseline;
-  gap: 0.9em;
+  gap: 2em;
   white-space: nowrap;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .hud-group {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.35em;
+  gap: 0.3em;                       /* было 0.35em */
 }

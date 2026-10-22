@@ -42,6 +42,9 @@ export function createRules() {
   let bowlFlash = null;
   let conveyorOffset = 0;
 
+  // Anti-repeat: id последних N спавнов (глобально)
+  let recentSpawns = [];
+
   let fieldW = 520;
   let fieldH = 720;
 
@@ -51,8 +54,7 @@ export function createRules() {
   }
 
   // ----------------------------------------------------------
-  // Рецепт: длина случайная; ровно STARTER_COUNT из STARTER_GROUP;
-  // остальные — случайные из НЕ-starter ингредиентов.
+  // Рецепт
   // ----------------------------------------------------------
   function newRecipe() {
     const len = config.MIN_RECIPE_LEN +
@@ -65,7 +67,7 @@ export function createRules() {
     const starterTake = Math.min(STARTER_COUNT, starterPool.length, len);
     const starters = shuffle(starterPool).slice(0, starterTake);
 
-    // Из остальных исключаем ВСЮ группу starter, а не только выбранные.
+    // Исключаем ВСЮ группу starter из остальных.
     const restPool = ALL_GOOD.filter(x => !STARTER_GROUP_SET.has(x.id));
     const freeSlots = Math.max(0, len - starterTake);
     const restPicks = shuffle(restPool).slice(0, freeSlots);
@@ -96,21 +98,58 @@ export function createRules() {
   }
 
   // ----------------------------------------------------------
+  // Anti-repeat
+  // ----------------------------------------------------------
+  function pushRecentSpawn(id) {
+    const n = config.SPAWN_ANTI_REPEAT || 0;
+    if (n <= 0) return;
+    recentSpawns.push(id);
+    while (recentSpawns.length > n) recentSpawns.shift();
+  }
+
+  function lastOnLane(laneIdx) {
+    const lane = lanes[laneIdx];
+    if (!lane || lane.length === 0) return null;
+    return lane[lane.length - 1].ingr.id;
+  }
+
+  // ----------------------------------------------------------
   // Спавн
   // ----------------------------------------------------------
-  function pickIngredientForSpawn() {
+  function pickIngredientForSpawn(laneIdx) {
     if (Math.random() < config.BAD_INGREDIENT_CHANCE) return BAD_INGREDIENT;
+
     const remaining = recipe.slice(collected.length);
-    if (remaining.length === 0) return pick(ALL_GOOD);
-    const id = pick(remaining);
-    return ALL_GOOD.find(x => x.id === id);
+
+    let pool = remaining.length > 0
+      ? remaining.map(id => ALL_GOOD.find(x => x.id === id)).filter(Boolean)
+      : ALL_GOOD.slice();
+
+    // Глобальный anti-repeat: исключить последние N id
+    const n = config.SPAWN_ANTI_REPEAT || 0;
+    if (n > 0 && recentSpawns.length > 0) {
+      const banned = new Set(recentSpawns);
+      const filtered = pool.filter(x => !banned.has(x.id));
+      if (filtered.length > 0) pool = filtered;
+    }
+
+    // Per-lane anti-repeat: не тот же, что последний на лейне
+    const perLane = config.SPAWN_ANTI_REPEAT_PER_LANE || 0;
+    if (perLane > 0 && laneIdx != null) {
+      const lastId = lastOnLane(laneIdx);
+      if (lastId) {
+        const filtered = pool.filter(x => x.id !== lastId);
+        if (filtered.length > 0) pool = filtered;
+      }
+    }
+
+    return pick(pool);
   }
 
   function spawnOnLane(laneIdx) {
-    lanes[laneIdx].push({
-      y: 0,
-      ingr: pickIngredientForSpawn(),
-    });
+    const ingr = pickIngredientForSpawn(laneIdx);
+    lanes[laneIdx].push({ y: 0, ingr });
+    pushRecentSpawn(ingr.id);
   }
 
   function spawnIntervalMs() {
@@ -243,6 +282,7 @@ export function createRules() {
     pizzaAnim = null;
     bowlFlash = null;
     conveyorOffset = 0;
+    recentSpawns = [];
     newRecipe();
     return getState();
   }
@@ -258,6 +298,7 @@ export function createRules() {
     pizzaAnim = null;
     bowlFlash = null;
     conveyorOffset = 0;
+    recentSpawns = [];
     newRecipe();
     return getState();
   }

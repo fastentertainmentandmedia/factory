@@ -1,7 +1,6 @@
 // ============================================================
 // [FILE: core/js/config.js]
-// Игровые константы движка. НЕ содержит списка ингредиентов —
-// он в game/js/config.js (gameConfig.INGREDIENTS).
+// Игровые константы движка.
 // ============================================================
 
 export const config = {
@@ -19,7 +18,7 @@ export const config = {
   CONVEYOR_TOP_RATIO:    0.20,
   CONVEYOR_BOTTOM_RATIO: 0.66,
 
-  ITEM_SIZE_RATIO:        0.13,
+  ITEM_SIZE_RATIO:        0.14,
   RECIPE_ITEM_SIZE_RATIO: 0.11,
   LANE_WIDTH_RATIO:       0.20,
   TAP_RADIUS_RATIO:       0.12,
@@ -28,14 +27,12 @@ export const config = {
   WAIT_POS_Y_RATIO: 0.92,
   MARKERS_OFFSET_RATIO: 0.09,
 
-  // Текстура лейнов (синхронизирована со скоростью ленты).
   TEXTURE_ENABLED: true,
   TEXTURE_PERIOD_RATIO: 0.06,
   TEXTURE_DOT_RATIO: 0.08,
   TEXTURE_ALPHA: 0.18,
   TEXTURE_SYNC_FACTOR: 0.30,
 
-  // Правила
   LANE_COUNT: 3,
   MAX_MISSES: 3,
 
@@ -45,19 +42,27 @@ export const config = {
   SCORE_PER_INGREDIENT: 5,
   SCORE_PER_PIZZA:      50,
 
-  BAD_INGREDIENT_CHANCE: 0.10,
+  BAD_INGREDIENT_CHANCE: 0.05,
+
+  // ----------------------------------------------------------
+  // Anti-repeat при спавне (для разнообразия на ленте).
+  //   SPAWN_ANTI_REPEAT — не спавнить id, если он в последних
+  //     N спавнах (0 — отключить).
+  //   SPAWN_ANTI_REPEAT_PER_LANE — не спавнить тот же id, что
+  //     последний на этом лейне (0 — отключить).
+  // Fallback: если после исключений пул пуст — берём без них.
+  // ----------------------------------------------------------
+  SPAWN_ANTI_REPEAT: 3,
+  SPAWN_ANTI_REPEAT_PER_LANE: 1,
 
   PIZZA_ANIM_MS: 1500,
-
   BOWL_FLASH_MS: 260,
-
   RESET_POSITION_AFTER_PIZZA: true,
 
   TIMER_WARN_RATIO:     0.50,
   TIMER_DANGER_RATIO:   0.20,
   TIMER_CRITICAL_RATIO: 0.10,
 
-  // Скорость и спавн
   BASE_FALL_SPEED: 2 * 60,
   SPEED_PER_PIZZA: 0.20,
 
@@ -66,8 +71,6 @@ export const config = {
   SPAWN_RATE_PER_PIZZA: 0.10,
   MIN_SPAWN_INTERVAL_MS: 65 * (1000 / 60),
 
-  // Цвета HUD / поля / лейнов / чаши / зон.
-  // Цвета ИНГРЕДИЕНТОВ — в game/js/config.js (fallback каждого).
   COLORS: {
     bg:              { var: '--color-field-bg',        fallback: '#fafafa' },
     recipeBg:        { var: '--color-recipe-bg',       fallback: '#f0f0f0' },

@@ -116,7 +116,7 @@ canvas {
   justify-content: center;   /* или center или space-between */
 
   padding: 0 2%;                    /* было 3% — ближе к краям */
-  gap: 10%;                          /* минимальный зазор между группами */
+  gap: 5%;                          /* минимальный зазор между группами */
 
   box-sizing: border-box;
   min-width: 0;
@@ -125,7 +125,7 @@ canvas {
 .hud-left {
   display: flex;
   align-items: baseline;
-  gap: 2em;                       /* компактнее внутри */
+  gap: 1em;                       /* компактнее внутри */
   white-space: nowrap;
   min-width: 0;
   flex-shrink: 1;
@@ -134,7 +134,7 @@ canvas {
 .hud-right {
   display: flex;
   align-items: baseline;
-  gap: 2em;
+  gap: 1em;
   white-space: nowrap;
   min-width: 0;
   flex-shrink: 1;

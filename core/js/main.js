@@ -49,7 +49,7 @@ function hidePreloader() {
   script.src = gameConfig.ASSETS.goatcounter;
   script.setAttribute(
     'data-goatcounter',
-    'https://fastentertainmentandmedia.goatcounter.com/count'
+    ''
   );
   script.setAttribute(
     'data-goatcounter-settings',
@@ -76,9 +76,9 @@ function hidePreloader() {
       k=e.createElement(t), a=e.getElementsByTagName(t)[0];
       k.async = 1; k.src = r;
       a.parentNode.insertBefore(k, a);
-    })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=113332587', 'ym');
+    })(window, document, 'script', '', 'ym');
 
-    window.ym(113332587, 'init', {
+    window.ym(0, 'init', {
       clickmap: true,
       trackLinks: true,
       accurateTrackBounce: true,

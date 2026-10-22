@@ -1,8 +1,5 @@
 // ============================================================
 // [FILE: core/js/render.js]
-// Ингредиенты — из gameConfig.INGREDIENTS (id/src/fallback).
-// Вписывание в слот — через INGREDIENT_FIT / FIT_SCALE /
-// FIT_PADDING / FIT_OVERRIDES (всё в game/js/config.js).
 // ============================================================
 
 import { config } from './config.js';
@@ -48,11 +45,8 @@ export function createRenderer(canvas, callbacks = {}) {
   let COLORS = {};
   let HUD_FONT = 'monospace';
 
-  // ----------------------------------------------------------
-  // Ингредиенты: карта id → { ingr, img, ready }
-  // ----------------------------------------------------------
-  const ING = {};       // id → { ingr, img, ready }
-  let BAD_INGR = null;  // { id, src, fallback, img, ready }
+  const ING = {};
+  let BAD_INGR = null;
 
   (function loadIngredientImages() {
     const list = [
@@ -82,9 +76,6 @@ export function createRenderer(canvas, callbacks = {}) {
     return !!(e && e.img && e.ready);
   }
 
-  // ----------------------------------------------------------
-  // Цвета + шрифт
-  // ----------------------------------------------------------
   function refreshColors() {
     const style = getComputedStyle(document.documentElement);
 
@@ -100,9 +91,6 @@ export function createRenderer(canvas, callbacks = {}) {
     buildTexturePattern();
   }
 
-  // ----------------------------------------------------------
-  // Текстура
-  // ----------------------------------------------------------
   function buildTexturePattern() {
     if (!config.TEXTURE_ENABLED || texturePeriodPx <= 0) {
       texturePattern = null;
@@ -135,9 +123,6 @@ export function createRenderer(canvas, callbacks = {}) {
     texturePattern = ctx.createPattern(texturePatternCanvas, 'repeat');
   }
 
-  // ----------------------------------------------------------
-  // Геометрия
-  // ----------------------------------------------------------
   function recomputeGeometry() {
     const minWH = Math.min(W, H);
     laneX = config.LANE_X_RATIOS.map(r => r * W);
@@ -180,20 +165,15 @@ export function createRenderer(canvas, callbacks = {}) {
     ];
   }
 
-  // ----------------------------------------------------------
-  // Ингредиент
-  // ----------------------------------------------------------
   function drawIngredient(cx, cy, ingr, size) {
     const fitSpec = getFitSpec(ingr.id);
 
-    // 1) картинка
     const entry = ING[ingr.id];
     if (entry && entry.img && entry.ready) {
       drawImageFitted(ctx, entry.img, cx, cy, size, fitSpec);
       return;
     }
 
-    // 2) процедурный fallback
     const c = ingr.fallback || { color: '#ccc', border: '#666' };
     const r = size / 2;
 
@@ -246,7 +226,6 @@ export function createRenderer(canvas, callbacks = {}) {
       dw = box;
       dh = box;
     } else {
-      // 'contain'
       const s = Math.min(box / iw, box / ih);
       dw = iw * s;
       dh = ih * s;
@@ -255,9 +234,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.drawImage(img, cx - dw / 2, cy - dh / 2, dw, dh);
   }
 
-  // ----------------------------------------------------------
-  // Конвейер: градиент + текстура (синхронизирована со лентой)
-  // ----------------------------------------------------------
   function drawConveyor(lx, isActive, offsetPx) {
     const halfW = laneWidth / 2;
     const left = lx - halfW;
@@ -301,9 +277,6 @@ export function createRenderer(canvas, callbacks = {}) {
     }
   }
 
-  // ----------------------------------------------------------
-  // Миска
-  // ----------------------------------------------------------
   function drawBowl(cx, cy, bowlFlash) {
     let scale = 1;
     let dx = 0;
@@ -369,9 +342,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fill();
   }
 
-  // ----------------------------------------------------------
-  // Зоны тапа
-  // ----------------------------------------------------------
   function drawPositionMarkers(currentPos) {
     const zones = getTapZones();
 
@@ -396,9 +366,6 @@ export function createRenderer(canvas, callbacks = {}) {
     }
   }
 
-  // ----------------------------------------------------------
-  // Верхняя панель
-  // ----------------------------------------------------------
   function drawRecipe(state) {
     const { recipe, collected } = state;
 
@@ -468,61 +435,34 @@ export function createRenderer(canvas, callbacks = {}) {
     }
   }
 
-  function drawPizzaAnim(pizzaAnim) {
-    const t = pizzaAnim.elapsed / pizzaAnim.duration;
+  // ----------------------------------------------------------
+  // Анимация «КОМБО ГОТОВО!» — без рисунка, только вспышка + текст.
+  // ----------------------------------------------------------
+  function drawComboAnim(comboAnim) {
+    const t = comboAnim.elapsed / comboAnim.duration;
     const alpha = t < 0.5 ? t * 2 : (1 - t) * 2;
-    const scale = 1 + Math.sin(t * Math.PI) * 0.5;
+    const scale = 1 + Math.sin(t * Math.PI) * 0.15;
 
-    ctx.fillStyle = withAlpha(COLORS.pizzaGlow, alpha);
+    ctx.fillStyle = withAlpha(COLORS.comboGlow, alpha);
     ctx.fillRect(0, 0, W, H);
 
-    const px = W / 2;
-    const py = H / 2 - 30;
-    const pr = 70 * scale;
+    const cx = W / 2;
+    const cy = H / 2;
 
-    ctx.beginPath();
-    ctx.ellipse(px, py + 50, pr * 0.9, 12, 0, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(0,0,0,${alpha * 0.2})`;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(px, py, pr, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.pizzaBase;
-    ctx.fill();
-    ctx.strokeStyle = COLORS.pizzaBaseBorder;
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(px, py, pr * 0.85, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.pizzaSauce;
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(px, py, pr * 0.75, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.pizzaCheese;
-    ctx.fill();
-
-    const pepPositions = [
-      [-pr*0.4, -pr*0.3], [pr*0.3, -pr*0.5], [pr*0.5, pr*0.2],
-      [-pr*0.2, pr*0.4], [0, -pr*0.1], [-pr*0.5, pr*0.3],
-    ];
-    for (const [dx, dy] of pepPositions) {
-      ctx.beginPath();
-      ctx.arc(px + dx, py + dy, pr * 0.12, 0, Math.PI * 2);
-      ctx.fillStyle = COLORS.pizzaPep;
-      ctx.fill();
-      ctx.strokeStyle = COLORS.pizzaPepBorder;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = `rgba(0,0,0,${alpha})`;
-    ctx.font = `bold 28px ${HUD_FONT}`;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
     ctx.textAlign = 'center';
-    ctx.fillText('+50', px, py + pr + 50);
-    ctx.font = `bold 20px ${HUD_FONT}`;
-    ctx.fillText('ПИЦЦА ГОТОВА!', px, py + pr + 80);
+    ctx.textBaseline = 'middle';
+
+    ctx.fillStyle = withAlpha(COLORS.scoreText || '#000000', alpha);
+    ctx.font = `bold ${Math.round(W * 0.055)}px ${HUD_FONT}`;
+    ctx.fillText(`+${config.SCORE_PER_COMBO}`, 0, -Math.round(W * 0.03));
+
+    ctx.font = `bold ${Math.round(W * 0.04)}px ${HUD_FONT}`;
+    ctx.fillText('КОМБО ГОТОВО!', 0, Math.round(W * 0.03));
+
+    ctx.restore();
   }
 
   function drawGameOver(state) {
@@ -556,7 +496,7 @@ export function createRenderer(canvas, callbacks = {}) {
 
       const speedFracPerSec =
         (config.BASE_FALL_SPEED / 720) *
-        (1 + (state.pizzasMade || 0) * config.SPEED_PER_PIZZA);
+        (1 + (state.combosMade || 0) * config.SPEED_PER_COMBO);
 
       const textureFracPerSec = speedFracPerSec * config.TEXTURE_SYNC_FACTOR;
       const periodsPerSec = textureFracPerSec / config.TEXTURE_PERIOD_RATIO;
@@ -568,7 +508,7 @@ export function createRenderer(canvas, callbacks = {}) {
     for (let l = 0; l < config.LANE_COUNT; l++) {
       drawConveyor(
         laneX[l],
-        l === state.currentPos && !state.over && !state.pizzaAnim,
+        l === state.currentPos && !state.over && !state.comboAnim,
         textureOffsetPx
       );
     }
@@ -583,7 +523,7 @@ export function createRenderer(canvas, callbacks = {}) {
       }
     }
 
-    if (!state.over && !state.pizzaAnim) {
+    if (!state.over && !state.comboAnim) {
       drawPositionMarkers(state.currentPos);
     }
 
@@ -604,13 +544,10 @@ export function createRenderer(canvas, callbacks = {}) {
       ctx.fillText('ОЖИДАНИЕ', dishX, dishY + 55);
     }
 
-    if (state.pizzaAnim) drawPizzaAnim(state.pizzaAnim);
+    if (state.comboAnim) drawComboAnim(state.comboAnim);
     if (state.over) drawGameOver(state);
   }
 
-  // ----------------------------------------------------------
-  // Утилиты
-  // ----------------------------------------------------------
   function withAlpha(color, a) {
     const c = parseColor(color);
     if (!c) return color;

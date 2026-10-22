@@ -1,6 +1,5 @@
 // ============================================================
 // [FILE: core/js/main.js]
-// Точка входа. Собирает core + game (Pizza Catch).
 // ============================================================
 
 import {
@@ -42,10 +41,6 @@ function hidePreloader() {
 }
 
 
-// ============================================================
-// goatcounter
-// ============================================================
-
 (function loadGoatCounter() {
   window.goatcounter = { allow_local: true };
 
@@ -54,7 +49,7 @@ function hidePreloader() {
   script.src = gameConfig.ASSETS.goatcounter;
   script.setAttribute(
     'data-goatcounter',
-    ''
+    'https://fastentertainmentandmedia.goatcounter.com/count'
   );
   script.setAttribute(
     'data-goatcounter-settings',
@@ -64,10 +59,6 @@ function hidePreloader() {
   document.head.appendChild(script);
 })();
 
-
-// ============================================================
-// metrika
-// ============================================================
 
 (function loadMetrika() {
   let loaded = false;
@@ -85,9 +76,9 @@ function hidePreloader() {
       k=e.createElement(t), a=e.getElementsByTagName(t)[0];
       k.async = 1; k.src = r;
       a.parentNode.insertBefore(k, a);
-    })(window, document, 'script', '', 'ym');
+    })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js?id=113332587', 'ym');
 
-    window.ym(0, 'init', {
+    window.ym(113332587, 'init', {
       clickmap: true,
       trackLinks: true,
       accurateTrackBounce: true,
@@ -112,10 +103,6 @@ function hidePreloader() {
 let gamesThisSession = 0;
 
 
-// ============================================================
-// init
-// ============================================================
-
 initPlayer();
 
 state.bestScore = getBestScore();
@@ -136,13 +123,12 @@ const renderer = createRenderer($.canvas, {
 
 rules.setFieldSize($.canvas.clientWidth || 520, $.canvas.clientHeight || 720);
 
-// Хелпер: снять snapshot из rules и залить нужные поля в state.
 function syncStateFromRules(extraPatch) {
   const snap = rules.getState();
   updateState({
     score: snap.score,
     misses: snap.misses,
-    pizzasMade: snap.pizzasMade,
+    combosMade: snap.combosMade,
     ...(extraPatch || {}),
   }, ui);
 }
@@ -153,7 +139,6 @@ const game = createLoop({
   config,
   callbacks: {
     onScore: (score) => {
-      // score приходит из loop, но misses/pizzasMade — из rules.
       syncStateFromRules({ score });
     },
 
@@ -201,10 +186,6 @@ const game = createLoop({
 });
 
 
-// ============================================================
-// tap-zones
-// ============================================================
-
 const tapZones = createTapZones($.canvas, {
   getZones: () => renderer.getTapZones(),
 
@@ -216,8 +197,6 @@ const tapZones = createTapZones($.canvas, {
 
     game.setPosition(pos);
 
-    // setPosition мог изменить misses (немедленный захват / gameover).
-    // Синхронизируем state с rules, чтобы HUD обновился.
     if (state.gameActive) {
       syncStateFromRules();
     }
@@ -238,29 +217,20 @@ function startNewGame() {
   resetGameState();
   ui.render();
   game.init();
-  // После init — синхронизируем misses/score (0).
   syncStateFromRules();
 }
 
-
-// ============================================================
-// resize
-// ============================================================
 
 createResize({
   canvas: $.canvas,
   onResize: (w, h, dpr) => {
     rules.setFieldSize(w, h);
     renderer.resize(w, h, dpr);
-    ui.setHudFontSize(h);
+    ui.setHudFontSize(w, h);
     game.render();
   },
 });
 
-
-// ============================================================
-// unlock
-// ============================================================
 
 function unlockGame() {
   if (state.gameUnlocked) return;
@@ -301,10 +271,6 @@ hidePreloader();
 intro.init();
 
 
-// ============================================================
-// session-tick
-// ============================================================
-
 setInterval(() => {
   if (!state.gameUnlocked) return;
 
@@ -321,10 +287,6 @@ setInterval(() => {
 }, 1000);
 
 
-// ============================================================
-// lifecycle
-// ============================================================
-
 createLifecycle({
   isActive: () => state.gameActive,
   onFlush: flushSession,
@@ -335,16 +297,8 @@ createLifecycle({
 });
 
 
-// ============================================================
-// contextmenu
-// ============================================================
-
 $.canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-
-// ============================================================
-// debug-reset-limit
-// ============================================================
 
 (function debugResetLimit() {
   const isDev =

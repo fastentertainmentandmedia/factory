@@ -1,8 +1,5 @@
 // ============================================================
 // [FILE: core/js/loop.js]
-// Игровой цикл на requestAnimationFrame с переменным dt (мс).
-// FPS-независим: правила получают dt и сами масштабируют скорость.
-// Не знает о специфике конкретной игры.
 // ============================================================
 
 import {
@@ -24,9 +21,7 @@ export function createLoop({ rules, renderer, config, callbacks }) {
   let paused = false;
   let lastTs = 0;
 
-  // Защита от гигантского dt при возврате вкладки из фона
   const MAX_DT = 100;
-
 
   function frame(ts) {
     if (!active || paused) return;
@@ -51,7 +46,7 @@ export function createLoop({ rules, renderer, config, callbacks }) {
       return;
     }
 
-    if (result && (result.event === 'score' || result.event === 'pizza')) {
+    if (result && (result.event === 'score' || result.event === 'combo')) {
       callbacks.onScore(rules.getScore());
     }
 
@@ -59,7 +54,6 @@ export function createLoop({ rules, renderer, config, callbacks }) {
 
     rafId = requestAnimationFrame(frame);
   }
-
 
   function init() {
     if (rafId) {
@@ -90,7 +84,6 @@ export function createLoop({ rules, renderer, config, callbacks }) {
     rafId = requestAnimationFrame(frame);
   }
 
-
   function pause() {
     if (!active || paused) return;
     paused = true;
@@ -112,7 +105,6 @@ export function createLoop({ rules, renderer, config, callbacks }) {
   function isPaused() {
     return paused;
   }
-
 
   function end(reason, payload) {
     if (!active && reason !== 'limit') return;
@@ -138,17 +130,14 @@ export function createLoop({ rules, renderer, config, callbacks }) {
     }
   }
 
-
   function render() {
     renderer.render(rules.getState());
   }
 
-
-  function resize(w, h) {
-    renderer.resize(w, h);
+  function resize(w, h, dpr) {
+    renderer.resize(w, h, dpr);
     renderer.render(rules.getState());
   }
-
 
   function showPreview() {
     rules.showPreview();
@@ -164,9 +153,6 @@ export function createLoop({ rules, renderer, config, callbacks }) {
     renderer.render(rules.getState());
   }
 
-
-  // Вызывается из main.js после тапа по зоне/вне зон.
-  // Возвращает результат rules.setPosition (или null, если игра не активна).
   function setPosition(pos) {
     if (!active || over || paused) return null;
 
@@ -178,14 +164,13 @@ export function createLoop({ rules, renderer, config, callbacks }) {
       return result;
     }
 
-    if (result && (result.event === 'score' || result.event === 'pizza')) {
+    if (result && (result.event === 'score' || result.event === 'combo')) {
       callbacks.onScore(rules.getScore());
     }
 
     renderer.render(rules.getState());
     return result;
   }
-
 
   return {
     init,

@@ -1,35 +1,28 @@
 /* ============================================================
    [FILE: game/css/theme.css]
    Тема: FOOD FACTORY — «Industrial Warm».
-   Светлый цех, металл, сигнальный оранжевый. Лого #da6b05
-   вписывается в акцент.
    ============================================================ */
 
 :root {
 
-  /* Переопределение под конкретного заказчика (опционально). */
   --header-h: 64px;
 
-  /* ---------- Поле и каркас ---------- */
-  --color-bg-deep:        #ddd6c8;   /* внешний фон за пределами wrapper */
-  --color-bg-wrapper-1:   #faf7f1;   /* верх градиента wrapper */
-  --color-bg-wrapper-2:   #e8e2d6;   /* низ градиента wrapper */
-  --color-field-bg:       #f3efe8;   /* фон поля (canvas) */
+  --color-bg-deep:        #ddd6c8;
+  --color-bg-wrapper-1:   #faf7f1;
+  --color-bg-wrapper-2:   #e8e2d6;
+  --color-field-bg:       #f3efe8;
 
-  /* ---------- Текст ---------- */
   --color-text-main:      #1f1d1a;
   --color-text-dim:       #6b6459;
   --color-text-warm:      #2a2621;
   --color-text-accent:    #1f1d1a;
 
-  /* ---------- Таймер по мере истечения (светофор цеха) ---------- */
-  --color-timer-normal:   #3f9142;   /* зелёный */
-  --color-timer-warning:  #d89a1a;   /* янтарный */
-  --color-timer-danger:   #c93a2e;   /* красный */
+  --color-timer-normal:   #3f9142;
+  --color-timer-warning:  #d89a1a;
+  --color-timer-danger:   #c93a2e;
 
-  /* ---------- Рецепт (верхняя панель) ---------- */
-  --color-recipe-bg:      #ece5d8;   /* тёплый кремовый */
-  --color-recipe-border:  #6b6459;   /* металлическая граница */
+  --color-recipe-bg:      #ece5d8;
+  --color-recipe-border:  #6b6459;
   --color-recipe-text:    #1f1d1a;
   --color-recipe-icon-bg: #faf7f1;
   --color-recipe-icon-br: #a89e8e;
@@ -37,15 +30,13 @@
   --color-recipe-check-bg: rgba(63, 145, 66, 0.28);
   --color-recipe-arrow:   #8a8378;
 
-  /* ---------- Конвейер (металл с тёплым подтоном) ---------- */
-  --color-conveyor-bg:        #cfc9bf;   /* верх ленты */
-  --color-conveyor-bg-bottom: #b8b1a5;   /* низ ленты */
+  --color-conveyor-bg:        #cfc9bf;
+  --color-conveyor-bg-bottom: #b8b1a5;
   --color-conveyor-border:    #8a8378;
-  --color-conveyor-texture:   #5a544b;   /* точки; alpha в config.TEXTURE_ALPHA */
-  --color-conveyor-active:    rgba(224, 123, 28, 0.85);   /* сигнальный оранжевый */
+  --color-conveyor-texture:   #5a544b;
+  --color-conveyor-active:    rgba(224, 123, 28, 0.85);
   --color-conveyor-active-bg: rgba(224, 123, 28, 0.18);
 
-  /* ---------- Чаша (тёплая керамика) ---------- */
   --color-bowl-body:      #e8e2d6;
   --color-bowl-rim:       #f3efe8;
   --color-bowl-inner:     #cfc9bf;
@@ -56,33 +47,21 @@
   --color-bowl-flash-good: #3f9142;
   --color-bowl-flash-bad:  #c93a2e;
 
-  /* ---------- Зоны тапа ---------- */
-  --color-zone-fill:      rgba(224, 123, 28, 1);    /* сигнальный оранжевый */
+  --color-zone-fill:      rgba(224, 123, 28, 1);
   --color-zone-border:    rgba(224, 123, 28, 1);
   --color-zone-text:      rgba(224, 123, 28, 1);
-  --color-tap-marker:     rgba(201, 58, 46, 1);     /* красный */
 
-  /* ---------- HUD на canvas ---------- */
   --color-score-text:     #1f1d1a;
   --color-misses-text:    #1f1d1a;
   --color-misses-danger:  #c93a2e;
-  --color-pizzas-text:    #6b6459;
 
-  /* ---------- Анимация «пицца готова» (тёплый крем + оранж) ---------- */
-  --color-pizza-glow:        rgba(250, 220, 170, 0.7);
-  --color-pizza-base:        #e0b070;
-  --color-pizza-base-br:     #a07040;
-  --color-pizza-sauce:       #d84a3a;
-  --color-pizza-cheese:      #f3c548;
-  --color-pizza-pep:         #c04020;
-  --color-pizza-pep-br:      #802010;
+  /* Анимация «КОМБО ГОТОВО!» — вспышка-фон. */
+  --color-combo-glow:     rgba(250, 220, 170, 0.7);
 
-  /* ---------- Game Over на canvas ---------- */
-  --color-gameover-bg:       rgba(243, 239, 232, 0.93);
-  --color-gameover-title:    #1f1d1a;
-  --color-gameover-text:     #1f1d1a;
+  --color-gameover-bg:    rgba(243, 239, 232, 0.93);
+  --color-gameover-title: #1f1d1a;
+  --color-gameover-text:  #1f1d1a;
 
-  /* ---------- Ингредиенты ---------- */
   --color-ing-dough:      #e0b070;  --color-ing-dough-br:   #a07040;
   --color-ing-tomato:     #d84a3a;  --color-ing-tomato-br:  #801818;
   --color-ing-cheese:     #f3c548;  --color-ing-cheese-br:  #b09020;
@@ -104,12 +83,10 @@
   --color-ing-cabbage:    #8fd07a;  --color-ing-cabbage-br: #4a8a3a;
   --color-ing-chilli:     #d84a3a;  --color-ing-chilli-br:  #801818;
 
-  /* ---------- UI (intro) ---------- */
   --color-panel-border:   #6b6459;
   --color-warning:        #d89a1a;
   --color-red:            #c93a2e;
 
-  /* ---------- Радиусы / шрифт ---------- */
   --radius-sm:   4px;
   --radius-md:   8px;
   --radius-lg:   14px;
@@ -117,7 +94,6 @@
 
   --font-mono: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
-  /* ---------- Раскладка поля ---------- */
   --field-aspect: 0.7222;
 
   --hud-top-h:  0.09;
@@ -147,7 +123,6 @@ body {
   color: var(--color-text-main);
 }
 
-/* Логотип — SVG-картинка. Текстовый brand (для intro) — оранжевый акцент. */
 .header-brand {
   font-size: clamp(16px, 4vw, 22px);
   font-weight: 900;
@@ -160,9 +135,6 @@ canvas {
 }
 
 
-/* ============================================================
-   [BLOCK: HUD-тексты (DOM-слой)
-   ============================================================ */
 .hud-layer {
   font-family: var(--font-mono);
   color: var(--color-text-accent);
@@ -172,9 +144,7 @@ canvas {
   font-size: 1em;
   font-weight: 900;
   letter-spacing: 1px;
-
   color: var(--color-timer-normal);
-
   transition: color 0.2s, font-size 0.2s, opacity 0.2s;
 }
 
@@ -191,7 +161,6 @@ canvas {
 .hud-timer.is-critical {
   font-size: 1.20em;
   color: var(--color-timer-danger);
-
   animation: hud-timer-pulse 1s ease-in-out infinite;
 }
 
@@ -214,8 +183,8 @@ canvas {
 .hud-misses-value,
 .hud-best-value,
 .hud-score-value {
-  font-weight: 700;
   font-size: clamp(0.7em, 0.8em, 0.98em);
+  font-weight: 700;
   color: var(--color-text-accent);
 }
 
@@ -224,10 +193,6 @@ canvas {
 }
 
 
-
-/* ============================================================
-   [BLOCK: touch-hint]
-   ============================================================ */
 .touch-hint {
   background-color: rgba(250, 247, 241, 0.96);
   color: var(--color-text-warm);
@@ -301,9 +266,6 @@ body[data-hint="limit"] .hint-limit-body p + p {
 }
 
 
-/* ============================================================
-   [BLOCK: intro-modal]
-   ============================================================ */
 .intro-modal {
   background-color: rgba(221, 214, 200, 0.85);
 }

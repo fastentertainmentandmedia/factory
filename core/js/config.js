@@ -1,5 +1,6 @@
 // ============================================================
 // [FILE: core/js/config.js]
+// Игровые константы движка.
 // ============================================================
 
 export const config = {
@@ -17,8 +18,8 @@ export const config = {
   CONVEYOR_TOP_RATIO:    0.20,
   CONVEYOR_BOTTOM_RATIO: 0.66,
 
-  ITEM_SIZE_RATIO:        0.14,
-  RECIPE_ITEM_SIZE_RATIO: 0.11,
+  ITEM_SIZE_RATIO:        0.11,
+  RECIPE_ITEM_SIZE_RATIO: 0.10,
   LANE_WIDTH_RATIO:       0.20,
   TAP_RADIUS_RATIO:       0.12,
 
@@ -35,41 +36,34 @@ export const config = {
   LANE_COUNT: 3,
   MAX_MISSES: 3,
 
-  MIN_RECIPE_LEN: 4,
+  MIN_RECIPE_LEN: 3,
   MAX_RECIPE_LEN: 6,
 
   SCORE_PER_INGREDIENT: 5,
-  SCORE_PER_PIZZA:      50,
+  SCORE_PER_COMBO:      50,
 
-  // Вероятность «плохого» ингредиента (danger) в спавне.
-  BAD_INGREDIENT_CHANCE: 0.05,
-
-  // Вероятность спавна «лишнего» ингредиента (не из текущего
-  // рецепта) — для разнообразия на ленте.
-  //   0   — только рецептные (+ danger)
-  //   0.3 — ~30% спавнов «лишние», 70% рецептные
-  //   1   — только «лишние» (+ danger)
-  EXTRA_SPAWN_CHANCE: 0.40,
+  BAD_INGREDIENT_CHANCE: 0.20,
+  EXTRA_SPAWN_CHANCE: 0.30,
 
   BAD_INSTANT_GAME_OVER: true,
 
   SPAWN_ANTI_REPEAT: 3,
   SPAWN_ANTI_REPEAT_PER_LANE: 1,
 
-  PIZZA_ANIM_MS: 1500,
+  COMBO_ANIM_MS: 1500,
   BOWL_FLASH_MS: 260,
-  RESET_POSITION_AFTER_PIZZA: true,
+  RESET_POSITION_AFTER_COMBO: true,
 
   TIMER_WARN_RATIO:     0.50,
   TIMER_DANGER_RATIO:   0.20,
   TIMER_CRITICAL_RATIO: 0.10,
 
   BASE_FALL_SPEED: 2 * 60,
-  SPEED_PER_PIZZA: 0.20,
+  SPEED_PER_COMBO: 0.20,
 
   BASE_SPAWN_MIN_MS: 80 * (1000 / 60),
   BASE_SPAWN_MAX_MS: 150 * (1000 / 60),
-  SPAWN_RATE_PER_PIZZA: 0.10,
+  SPAWN_RATE_PER_COMBO: 0.10,
   MIN_SPAWN_INTERVAL_MS: 65 * (1000 / 60),
 
   COLORS: {
@@ -115,13 +109,7 @@ export const config = {
     missesText:      { var: '--color-misses-text',     fallback: '#000000' },
     missesDanger:    { var: '--color-misses-danger',   fallback: '#cc0000' },
 
-    pizzaGlow:       { var: '--color-pizza-glow',      fallback: 'rgba(255,240,200,0.7)' },
-    pizzaBase:       { var: '--color-pizza-base',      fallback: '#e0b070' },
-    pizzaBaseBorder: { var: '--color-pizza-base-br',   fallback: '#a07040' },
-    pizzaSauce:      { var: '--color-pizza-sauce',     fallback: '#e03030' },
-    pizzaCheese:     { var: '--color-pizza-cheese',    fallback: '#f7d040' },
-    pizzaPep:        { var: '--color-pizza-pep',       fallback: '#c04020' },
-    pizzaPepBorder:  { var: '--color-pizza-pep-br',    fallback: '#802010' },
+    comboGlow:       { var: '--color-combo-glow',      fallback: 'rgba(255,240,200,0.7)' },
 
     gameOverOverlay: { var: '--color-gameover-bg',     fallback: 'rgba(255,255,255,0.9)' },
     gameOverTitle:   { var: '--color-gameover-title',  fallback: '#000000' },

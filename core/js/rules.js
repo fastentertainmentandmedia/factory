@@ -32,13 +32,13 @@ export function createRules() {
   let currentPos = 3;
   let score = 0;
   let misses = 0;
-  let pizzasMade = 0;
+  let combosMade = 0;
   let over = false;
 
   let recipe = [];
   let collected = [];
 
-  let pizzaAnim = null;
+  let comboAnim = null;
   let bowlFlash = null;
   let conveyorOffset = 0;
 
@@ -112,12 +112,7 @@ export function createRules() {
   }
 
   // ----------------------------------------------------------
-  // Спавн.
-  // Пулы:
-  //   - "нужные"  — оставшиеся по рецепту
-  //   - "лишние"  — все хорошие, кроме оставшихся по рецепту
-  // Доля "лишних" — EXTRA_SPAWN_CHANCE.
-  // Anti-repeat применяется к выбранному пулу.
+  // Спавн
   // ----------------------------------------------------------
   function pickIngredientForSpawn(laneIdx) {
     if (Math.random() < config.BAD_INGREDIENT_CHANCE) return BAD_INGREDIENT;
@@ -129,17 +124,14 @@ export function createRules() {
     const wantExtra = Math.random() < (config.EXTRA_SPAWN_CHANCE || 0);
 
     if (wantExtra && ALL_GOOD.length > remaining.length) {
-      // «лишние»: все, кроме ещё нужных
       pool = ALL_GOOD.filter(x => !neededSet.has(x.id));
       if (pool.length === 0) pool = ALL_GOOD.slice();
     } else if (remaining.length > 0) {
-      // «нужные»
       pool = remaining.map(id => ALL_GOOD.find(x => x.id === id)).filter(Boolean);
     } else {
       pool = ALL_GOOD.slice();
     }
 
-    // Anti-repeat: глобальный
     const n = config.SPAWN_ANTI_REPEAT || 0;
     if (n > 0 && recentSpawns.length > 0) {
       const banned = new Set(recentSpawns);
@@ -147,7 +139,6 @@ export function createRules() {
       if (filtered.length > 0) pool = filtered;
     }
 
-    // Anti-repeat: per-lane
     const perLane = config.SPAWN_ANTI_REPEAT_PER_LANE || 0;
     if (perLane > 0 && laneIdx != null) {
       const lastId = lastOnLane(laneIdx);
@@ -169,14 +160,14 @@ export function createRules() {
   function spawnIntervalMs() {
     const base = config.BASE_SPAWN_MIN_MS +
                  randInt(config.BASE_SPAWN_MAX_MS - config.BASE_SPAWN_MIN_MS);
-    const scaled = base / (1 + pizzasMade * config.SPAWN_RATE_PER_PIZZA);
+    const scaled = base / (1 + combosMade * config.SPAWN_RATE_PER_COMBO);
     return Math.max(config.MIN_SPAWN_INTERVAL_MS, scaled);
   }
 
   function fallSpeedPxPerSec() {
     const scale = fieldH / 720;
     return config.BASE_FALL_SPEED * scale *
-           (1 + pizzasMade * config.SPEED_PER_PIZZA);
+           (1 + combosMade * config.SPEED_PER_COMBO);
   }
 
   // ----------------------------------------------------------
@@ -212,17 +203,17 @@ export function createRules() {
     collected.push(nextNeeded);
 
     if (collected.length === recipe.length) {
-      score += config.SCORE_PER_PIZZA;
-      pizzasMade++;
-      pizzaAnim = { startTime: performance.now() };
-      return { event: 'pizza' };
+      score += config.SCORE_PER_COMBO;
+      combosMade++;
+      comboAnim = { startTime: performance.now() };
+      return { event: 'combo' };
     }
 
     return { event: 'score' };
   }
 
   function checkImmediateGrab() {
-    if (currentPos === 3 || over || pizzaAnim) return null;
+    if (currentPos === 3 || over || comboAnim) return null;
     const lane = lanes[currentPos];
     for (let i = lane.length - 1; i >= 0; i--) {
       const obj = lane[i];
@@ -239,11 +230,11 @@ export function createRules() {
   function tick(dt) {
     if (over) return { event: null };
 
-    if (pizzaAnim) {
-      if (performance.now() - pizzaAnim.startTime > config.PIZZA_ANIM_MS) {
-        pizzaAnim = null;
+    if (comboAnim) {
+      if (performance.now() - comboAnim.startTime > config.COMBO_ANIM_MS) {
+        comboAnim = null;
         newRecipe();
-        if (config.RESET_POSITION_AFTER_PIZZA) {
+        if (config.RESET_POSITION_AFTER_COMBO) {
           currentPos = 3;
         }
         return { event: 'score' };
@@ -295,9 +286,9 @@ export function createRules() {
     currentPos = 3;
     score = 0;
     misses = 0;
-    pizzasMade = 0;
+    combosMade = 0;
     over = false;
-    pizzaAnim = null;
+    comboAnim = null;
     bowlFlash = null;
     conveyorOffset = 0;
     recentSpawns = [];
@@ -311,9 +302,9 @@ export function createRules() {
     currentPos = 3;
     score = 0;
     misses = 0;
-    pizzasMade = 0;
+    combosMade = 0;
     over = false;
-    pizzaAnim = null;
+    comboAnim = null;
     bowlFlash = null;
     conveyorOffset = 0;
     recentSpawns = [];
@@ -322,7 +313,7 @@ export function createRules() {
   }
 
   function setPosition(pos) {
-    if (over || pizzaAnim) return { event: null };
+    if (over || comboAnim) return { event: null };
     if (pos < 0 || pos > 3) return { event: null };
     currentPos = pos;
     const r = checkImmediateGrab();
@@ -338,14 +329,14 @@ export function createRules() {
       currentPos,
       score,
       misses,
-      pizzasMade,
+      combosMade,
       over,
       recipe,
       collected: collected.length,
-      pizzaAnim: pizzaAnim
+      comboAnim: comboAnim
         ? {
-            elapsed: performance.now() - pizzaAnim.startTime,
-            duration: config.PIZZA_ANIM_MS,
+            elapsed: performance.now() - comboAnim.startTime,
+            duration: config.COMBO_ANIM_MS,
           }
         : null,
       bowlFlash: getBowlFlashState(),

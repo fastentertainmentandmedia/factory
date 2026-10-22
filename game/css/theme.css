@@ -1,118 +1,113 @@
 /* ============================================================
    [FILE: game/css/theme.css]
+   Тема: FOOD FACTORY — «Industrial Warm».
+   Светлый цех, металл, сигнальный оранжевый. Лого #da6b05
+   вписывается в акцент.
    ============================================================ */
 
 :root {
 
   /* Переопределение под конкретного заказчика (опционально). */
-  --header-h: 64px;   /* если логотип «высокий» — больше; «низкий» — меньше */
+  --header-h: 64px;
 
   /* ---------- Поле и каркас ---------- */
-  --color-bg-deep:        #222222;
-  --color-bg-wrapper-1:   #fafafa;
-  --color-bg-wrapper-2:   #ededed;
-  --color-field-bg:       #fafafa;
+  --color-bg-deep:        #ddd6c8;   /* внешний фон за пределами wrapper */
+  --color-bg-wrapper-1:   #faf7f1;   /* верх градиента wrapper */
+  --color-bg-wrapper-2:   #e8e2d6;   /* низ градиента wrapper */
+  --color-field-bg:       #f3efe8;   /* фон поля (canvas) */
 
   /* ---------- Текст ---------- */
-  --color-text-main:      #000000;
-  --color-text-dim:       #555555;
-  --color-text-warm:      #222222;
-  --color-text-accent:    #000000;
+  --color-text-main:      #1f1d1a;
+  --color-text-dim:       #6b6459;
+  --color-text-warm:      #2a2621;
+  --color-text-accent:    #1f1d1a;
 
-  /* ---------- Таймер по мере истечения ---------- */
-  --color-timer-normal:   #38b24a;
-  --color-timer-warning:  #d87a0f;
-  --color-timer-danger:   #cc0000;
+  /* ---------- Таймер по мере истечения (светофор цеха) ---------- */
+  --color-timer-normal:   #3f9142;   /* зелёный */
+  --color-timer-warning:  #d89a1a;   /* янтарный */
+  --color-timer-danger:   #c93a2e;   /* красный */
 
-  /* ---------- Рецепт ---------- */
-  --color-recipe-bg:      #f0f0f0;
-  --color-recipe-border:  #000000;
-  --color-recipe-text:    #000000;
-  --color-recipe-icon-bg: #ffffff;
-  --color-recipe-icon-br: #888888;
-  --color-recipe-check:   #00aa00;
-  --color-recipe-check-bg: rgba(0, 180, 0, 0.3);
-  --color-recipe-arrow:   #888888;
+  /* ---------- Рецепт (верхняя панель) ---------- */
+  --color-recipe-bg:      #ece5d8;   /* тёплый кремовый */
+  --color-recipe-border:  #6b6459;   /* металлическая граница */
+  --color-recipe-text:    #1f1d1a;
+  --color-recipe-icon-bg: #faf7f1;
+  --color-recipe-icon-br: #a89e8e;
+  --color-recipe-check:   #3f9142;
+  --color-recipe-check-bg: rgba(63, 145, 66, 0.28);
+  --color-recipe-arrow:   #8a8378;
 
-  /* ---------- Конвейер ---------- */
-  --color-conveyor-bg:        #d8d8d8;
-  --color-conveyor-bg-bottom: #c4c4c4;
-  --color-conveyor-border:    #a0a0a0;
-  --color-conveyor-active:    rgba(255, 200, 0, 0.8);
-  --color-conveyor-active-bg: rgba(255, 220, 100, 0.35);
+  /* ---------- Конвейер (металл с тёплым подтоном) ---------- */
+  --color-conveyor-bg:        #cfc9bf;   /* верх ленты */
+  --color-conveyor-bg-bottom: #b8b1a5;   /* низ ленты */
+  --color-conveyor-border:    #8a8378;
+  --color-conveyor-texture:   #5a544b;   /* точки; alpha в config.TEXTURE_ALPHA */
+  --color-conveyor-active:    rgba(224, 123, 28, 0.85);   /* сигнальный оранжевый */
+  --color-conveyor-active-bg: rgba(224, 123, 28, 0.18);
 
-  /* В блоке :root, рядом с --color-conveyor-* : */
-
-  --color-conveyor-bg:        #d8d8d8;
-  --color-conveyor-bg-bottom: #c4c4c4;
-  --color-conveyor-border:    #a0a0a0;
-  --color-conveyor-texture:   #000000;   /* ← цвет точек; alpha — в config.TEXTURE_ALPHA */
-  --color-conveyor-active:    rgba(255, 200, 0, 0.8);
-  --color-conveyor-active-bg: rgba(255, 220, 100, 0.35);
-
-  /* ---------- Чаша ---------- */
-  --color-bowl-body:      #d8d8d8;
-  --color-bowl-rim:       #e8e8e8;
-  --color-bowl-inner:     #b0b0b0;
-  --color-bowl-inner-br:  #888888;
-  --color-bowl-border:    #555555;
-  --color-bowl-shadow:    rgba(0, 0, 0, 0.15);
-  --color-bowl-highlight: rgba(255, 255, 255, 0.7);
-  --color-bowl-flash-good: #38b24a;
-  --color-bowl-flash-bad:  #d22b2b;
+  /* ---------- Чаша (тёплая керамика) ---------- */
+  --color-bowl-body:      #e8e2d6;
+  --color-bowl-rim:       #f3efe8;
+  --color-bowl-inner:     #cfc9bf;
+  --color-bowl-inner-br:  #8a8378;
+  --color-bowl-border:    #6b6459;
+  --color-bowl-shadow:    rgba(31, 29, 26, 0.18);
+  --color-bowl-highlight: rgba(255, 255, 255, 0.65);
+  --color-bowl-flash-good: #3f9142;
+  --color-bowl-flash-bad:  #c93a2e;
 
   /* ---------- Зоны тапа ---------- */
-  --color-zone-fill:      rgba(0, 120, 255, 1);
-  --color-zone-border:    rgba(0, 100, 200, 1);
-  --color-zone-text:      rgba(0, 100, 200, 1);
-  --color-tap-marker:     rgba(255, 100, 100, 1);
+  --color-zone-fill:      rgba(224, 123, 28, 1);    /* сигнальный оранжевый */
+  --color-zone-border:    rgba(224, 123, 28, 1);
+  --color-zone-text:      rgba(224, 123, 28, 1);
+  --color-tap-marker:     rgba(201, 58, 46, 1);     /* красный */
 
   /* ---------- HUD на canvas ---------- */
-  --color-score-text:     #000000;
-  --color-misses-text:    #000000;
-  --color-misses-danger:  #cc0000;
-  --color-pizzas-text:    #888888;
+  --color-score-text:     #1f1d1a;
+  --color-misses-text:    #1f1d1a;
+  --color-misses-danger:  #c93a2e;
+  --color-pizzas-text:    #6b6459;
 
-  /* ---------- Анимация «пицца готова» ---------- */
-  --color-pizza-glow:        rgba(255, 240, 200, 0.7);
+  /* ---------- Анимация «пицца готова» (тёплый крем + оранж) ---------- */
+  --color-pizza-glow:        rgba(250, 220, 170, 0.7);
   --color-pizza-base:        #e0b070;
   --color-pizza-base-br:     #a07040;
-  --color-pizza-sauce:       #e03030;
-  --color-pizza-cheese:      #f7d040;
+  --color-pizza-sauce:       #d84a3a;
+  --color-pizza-cheese:      #f3c548;
   --color-pizza-pep:         #c04020;
   --color-pizza-pep-br:      #802010;
 
   /* ---------- Game Over на canvas ---------- */
-  --color-gameover-bg:       rgba(255, 255, 255, 0.9);
-  --color-gameover-title:    #000000;
-  --color-gameover-text:     #000000;
+  --color-gameover-bg:       rgba(243, 239, 232, 0.93);
+  --color-gameover-title:    #1f1d1a;
+  --color-gameover-text:     #1f1d1a;
 
   /* ---------- Ингредиенты ---------- */
   --color-ing-dough:      #e0b070;  --color-ing-dough-br:   #a07040;
-  --color-ing-tomato:     #e03030;  --color-ing-tomato-br:  #801818;
-  --color-ing-cheese:     #f7d040;  --color-ing-cheese-br:  #b09020;
+  --color-ing-tomato:     #d84a3a;  --color-ing-tomato-br:  #801818;
+  --color-ing-cheese:     #f3c548;  --color-ing-cheese-br:  #b09020;
   --color-ing-pep:        #c04020;  --color-ing-pep-br:     #802010;
-  --color-ing-herb:       #50a050;  --color-ing-herb-br:    #206020;
+  --color-ing-herb:       #4f9a4a;  --color-ing-herb-br:    #206020;
   --color-ing-mush:       #c8b090;  --color-ing-mush-br:    #806040;
-  --color-ing-olive:      #202020;  --color-ing-olive-br:   #000000;
+  --color-ing-olive:      #2a2824;  --color-ing-olive-br:   #000000;
   --color-ing-bacon:      #d08060;  --color-ing-bacon-br:   #804030;
   --color-ing-pepper:     #f08030;  --color-ing-pepper-br:  #a05010;
-  --color-ing-onion:      #e0d0e0;  --color-ing-onion-br:   #a080b0;
+  --color-ing-onion:      #e8dde8;  --color-ing-onion-br:   #a080b0;
   --color-ing-pine:       #f0e020;  --color-ing-pine-br:    #a0a010;
   --color-ing-chick:      #f0d0b0;  --color-ing-chick-br:   #a09070;
   --color-ing-ham:        #f0a0a0;  --color-ing-ham-br:     #a06060;
-  --color-ing-spin:       #30a030;  --color-ing-spin-br:    #106010;
+  --color-ing-spin:       #2e9030;  --color-ing-spin-br:    #106010;
   --color-ing-bad:        #806050;  --color-ing-bad-br:     #402818;
 
   --color-ing-egg:        #fff6d6;  --color-ing-egg-br:     #e0c060;
   --color-ing-pork:       #f0a0a0;  --color-ing-pork-br:    #c06060;
   --color-ing-cabbage:    #8fd07a;  --color-ing-cabbage-br: #4a8a3a;
-  --color-ing-chilli:     #e03030;  --color-ing-chilli-br:  #801818;
+  --color-ing-chilli:     #d84a3a;  --color-ing-chilli-br:  #801818;
 
   /* ---------- UI (intro) ---------- */
-  --color-panel-border:   #000000;
-  --color-warning:        #d87a0f;
-  --color-red:            #cc0000;
+  --color-panel-border:   #6b6459;
+  --color-warning:        #d89a1a;
+  --color-red:            #c93a2e;
 
   /* ---------- Радиусы / шрифт ---------- */
   --radius-sm:   4px;
@@ -125,7 +120,6 @@
   /* ---------- Раскладка поля ---------- */
   --field-aspect: 0.7222;
 
-  /* Пропорции HUD (синхронизированы с config.HUD_*) */
   --hud-top-h:  0.09;
   --hud-padding: 0.03;
 }
@@ -153,11 +147,12 @@ body {
   color: var(--color-text-main);
 }
 
+/* Логотип — SVG-картинка. Текстовый brand (для intro) — оранжевый акцент. */
 .header-brand {
   font-size: clamp(16px, 4vw, 22px);
   font-weight: 900;
   letter-spacing: 4px;
-  color: var(--color-text-accent);
+  color: #da6b05;
 }
 
 canvas {
@@ -244,10 +239,10 @@ canvas {
    [BLOCK: touch-hint]
    ============================================================ */
 .touch-hint {
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: rgba(250, 247, 241, 0.96);
   color: var(--color-text-warm);
 
-  border: 3px solid var(--color-panel-border);
+  border: 3px solid var(--color-conveyor-active);
   border-radius: var(--radius-md);
 
   font-family: var(--font-mono);
@@ -258,8 +253,8 @@ canvas {
   text-align: center;
 
   box-shadow:
-    0 0 40px rgba(0, 0, 0, 0.15),
-    inset 0 0 30px rgba(0, 0, 0, 0.04);
+    0 0 40px rgba(224, 123, 28, 0.25),
+    inset 0 0 30px rgba(224, 123, 28, 0.06);
 }
 
 .touch-hint small {
@@ -270,7 +265,7 @@ canvas {
 }
 
 body[data-hint="limit"] .touch-hint {
-  background-color: rgba(255, 252, 245, 0.97);
+  background-color: rgba(250, 247, 241, 0.97);
   border: 3px solid var(--color-warning);
   color: var(--color-text-main);
 }
@@ -289,7 +284,7 @@ body[data-hint="limit"] .hint-limit-record {
   color: var(--color-text-dim);
   margin-bottom: 16px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(107, 100, 89, 0.25);
 }
 
 body[data-hint="limit"] #limitBestScore {
@@ -320,7 +315,7 @@ body[data-hint="limit"] .hint-limit-body p + p {
    [BLOCK: intro-modal]
    ============================================================ */
 .intro-modal {
-  background-color: rgba(240, 240, 240, 0.85);
+  background-color: rgba(221, 214, 200, 0.85);
 }
 
 .intro-content {
@@ -330,11 +325,11 @@ body[data-hint="limit"] .hint-limit-body p + p {
     var(--color-bg-wrapper-2) 100%
   );
 
-  border: 3px solid var(--color-panel-border);
+  border: 3px solid var(--color-conveyor-active);
   border-radius: var(--radius-lg);
 
   box-shadow:
-    0 0 40px rgba(0, 0, 0, 0.15),
+    0 0 40px rgba(224, 123, 28, 0.25),
     inset 0 0 30px rgba(255, 255, 255, 0.6);
 
   color: var(--color-text-main);
@@ -357,7 +352,7 @@ body[data-hint="limit"] .hint-limit-body p + p {
 .intro-rules li::before {
   font-family: var(--font-mono);
   font-size: 0.9em;
-  color: var(--color-warning);
+  color: #da6b05;
 }
 
 .intro-cookie {
@@ -374,20 +369,20 @@ body[data-hint="limit"] .hint-limit-body p + p {
   color: #ffffff;
   text-transform: uppercase;
 
-  border: 2px solid var(--color-panel-border);
+  border: 2px solid #b8560a;
   border-radius: var(--radius-pill);
 
-  background-color: #222222;
+  background-color: #da6b05;
 
   box-shadow:
-    0 4px 0 #000000,
+    0 4px 0 #8a4303,
     0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 .intro-accept:active {
-  background-color: #444444;
+  background-color: #e07b1c;
   box-shadow:
-    0 1px 0 #000000,
+    0 1px 0 #8a4303,
     0 3px 8px rgba(0, 0, 0, 0.3);
   transform: translateY(3px);
 }

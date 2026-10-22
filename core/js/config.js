@@ -1,20 +1,11 @@
 // ============================================================
 // [FILE: core/js/config.js]
-// ВСЕ игровые константы Pizza Catch.
 // ============================================================
 
 export const config = {
 
-  // ----------------------------------------------------------
-  // Рендер: ограничение devicePixelRatio (HiDPI).
-  // 1 — без HiDPI; 2 — баланс резкость/производительность;
-  // 3 — максимальная резкость (дороже по памяти/GPU).
-  // ----------------------------------------------------------
-  MAX_DPR: 1,
+  MAX_DPR: 2,
 
-  // ----------------------------------------------------------
-  // Поле (пропорции — доли от W или H)
-  // ----------------------------------------------------------
   FIELD_ASPECT: 520 / 720,
 
   LANE_X_RATIOS: [0.20, 0.50, 0.80],
@@ -24,20 +15,30 @@ export const config = {
   HUD_PADDING_RATIO:    0.03,
 
   CONVEYOR_TOP_RATIO:    0.20,
-  CONVEYOR_BOTTOM_RATIO: 0.64,
+  CONVEYOR_BOTTOM_RATIO: 0.66,
 
-  ITEM_SIZE_RATIO:        0.12,
-  RECIPE_ITEM_SIZE_RATIO: 0.11,
+  ITEM_SIZE_RATIO:        0.11,
+  RECIPE_ITEM_SIZE_RATIO: 0.10,
   LANE_WIDTH_RATIO:       0.20,
   TAP_RADIUS_RATIO:       0.12,
 
   WAIT_POS_X_RATIO: 0.50,
   WAIT_POS_Y_RATIO: 0.92,
-  MARKERS_OFFSET_RATIO: 0.07,
+  MARKERS_OFFSET_RATIO: 0.09,
 
   // ----------------------------------------------------------
-  // Правила
+  // Текстура лейнов.
+  // Скорость СИНХРОНИЗИРОВАНА со скоростью ленты (BASE_FALL_SPEED,
+  // SPEED_PER_PIZZA): textureFracPerSec = speedFracPerSec * SYNC_FACTOR.
+  // SYNC_FACTOR < 1 — текстура "ползёт" медленнее груза (нет ряби),
+  // но темп совпадает, включая ускорение от pizzasMade.
   // ----------------------------------------------------------
+  TEXTURE_ENABLED: true,
+  TEXTURE_PERIOD_RATIO: 0.04,
+  TEXTURE_DOT_RATIO: 0.08,
+  TEXTURE_ALPHA: 0.18,
+  TEXTURE_SYNC_FACTOR: 0.5,
+
   LANE_COUNT: 3,
   MAX_MISSES: 3,
 
@@ -55,16 +56,10 @@ export const config = {
 
   RESET_POSITION_AFTER_PIZZA: true,
 
-  // ----------------------------------------------------------
-  // Таймер: пороги смены вида (доли от PLAY_LIMIT_MINUTES).
-  // ----------------------------------------------------------
   TIMER_WARN_RATIO:     0.50,
   TIMER_DANGER_RATIO:   0.20,
   TIMER_CRITICAL_RATIO: 0.10,
 
-  // ----------------------------------------------------------
-  // Скорость и спавн (FPS-независимо)
-  // ----------------------------------------------------------
   BASE_FALL_SPEED: 2 * 60,
   SPEED_PER_PIZZA: 0.20,
 
@@ -73,9 +68,6 @@ export const config = {
   SPAWN_RATE_PER_PIZZA: 0.10,
   MIN_SPAWN_INTERVAL_MS: 65 * (1000 / 60),
 
-  // ----------------------------------------------------------
-  // Цвета — имена CSS-переменных + fallback.
-  // ----------------------------------------------------------
   COLORS: {
     bg:              { var: '--color-field-bg',        fallback: '#fafafa' },
     recipeBg:        { var: '--color-recipe-bg',       fallback: '#f0f0f0' },
@@ -96,11 +88,10 @@ export const config = {
 
     conveyorBg:       { var: '--color-conveyor-bg',        fallback: '#d8d8d8' },
     conveyorBgBottom: { var: '--color-conveyor-bg-bottom', fallback: '#c4c4c4' },
-    conveyorStripe:   { var: '--color-conveyor-stripe',    fallback: '#a8a8a8' },
     conveyorBorder:   { var: '--color-conveyor-border',    fallback: '#a0a0a0' },
-    conveyorArrow:    { var: '--color-conveyor-arrow',     fallback: 'rgba(80,80,80,0.4)' },
     conveyorActive:   { var: '--color-conveyor-active',    fallback: 'rgba(255,200,0,0.8)' },
     conveyorActiveBg: { var: '--color-conveyor-active-bg', fallback: 'rgba(255,220,100,0.35)' },
+    conveyorTexture:  { var: '--color-conveyor-texture',   fallback: '#000000' },
 
     bowlBody:        { var: '--color-bowl-body',       fallback: '#d8d8d8' },
     bowlRim:         { var: '--color-bowl-rim',        fallback: '#e8e8e8' },
@@ -122,9 +113,6 @@ export const config = {
     missesText:      { var: '--color-misses-text',     fallback: '#000000' },
     missesDanger:    { var: '--color-misses-danger',   fallback: '#cc0000' },
     pizzasText:      { var: '--color-pizzas-text',     fallback: '#888888' },
-
-    bottomBar:       { var: '--color-bottom-bar',      fallback: '#dddddd' },
-    bottomBarBorder: { var: '--color-bottom-bar-br',   fallback: '#000000' },
 
     pizzaGlow:       { var: '--color-pizza-glow',      fallback: 'rgba(255,240,200,0.7)' },
     pizzaBase:       { var: '--color-pizza-base',      fallback: '#e0b070' },

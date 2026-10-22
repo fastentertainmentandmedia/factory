@@ -1,9 +1,8 @@
 // ============================================================
 // [FILE: core/js/render.js]
-// Canvas 2D отрисовка Pizza Catch.
-// HUD-тексты (таймер/промахи/рекорд/счёт) — в DOM (ui.js).
-// На canvas остаётся: фон панели, рецепт (иконки + стрелки),
-// лейны, ингредиенты, чаша, зоны, оверлеи.
+// Лейны: градиент + текстура точек, синхронизированная со
+// скоростью ленты (BASE_FALL_SPEED, SPEED_PER_PIZZA) через
+// TEXTURE_SYNC_FACTOR (< 1 — медленнее, без ряби).
 // ============================================================
 
 import { config } from './config.js';
@@ -46,14 +45,18 @@ export function createRenderer(canvas, callbacks = {}) {
   let waitY = 0;
   let markersY = 0;
 
+  // Текстура
+  let texturePeriodPx = 0;
+  let texturePatternCanvas = null;
+  let texturePattern = null;
+  let textureOffset = 0;        // 0..1 (доля периода)
+  let lastTextureTs = 0;        // performance.now() предыдущего кадра
+
   let COLORS = {};
   let ING_COLORS = {};
   let BAD_COLOR = null;
   let HUD_FONT = 'monospace';
 
-  // ----------------------------------------------------------
-  // SVG/PNG ингредиентов
-  // ----------------------------------------------------------
   const ING_IMAGES = {};
   const ING_IMAGES_READY = {};
 
@@ -98,6 +101,46 @@ export function createRenderer(canvas, callbacks = {}) {
 
     const fontRaw = style.getPropertyValue('--font-mono').trim();
     HUD_FONT = fontRaw || "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+    buildTexturePattern();
+  }
+
+  // ----------------------------------------------------------
+  // Текстура: offscreen-canvas с точками.
+  // ----------------------------------------------------------
+  function buildTexturePattern() {
+    if (!config.TEXTURE_ENABLED) {
+      texturePattern = null;
+      texturePatternCanvas = null;
+      return;
+    }
+    if (texturePeriodPx <= 0) return;
+
+    const period = Math.max(6, Math.round(texturePeriodPx));
+    const dot = Math.max(1, Math.round(period * config.TEXTURE_DOT_RATIO));
+
+    texturePatternCanvas = document.createElement('canvas');
+    texturePatternCanvas.width = period;
+    texturePatternCanvas.height = period;
+
+    const pctx = texturePatternCanvas.getContext('2d');
+    pctx.clearRect(0, 0, period, period);
+
+    const base = COLORS.conveyorTexture || '#000000';
+    const parsed = parseColor(base);
+    const alpha = config.TEXTURE_ALPHA;
+
+    if (parsed) {
+      pctx.fillStyle = `rgba(${parsed.r},${parsed.g},${parsed.b},${alpha})`;
+    } else {
+      pctx.fillStyle = base;
+    }
+
+    pctx.beginPath();
+    pctx.arc(period / 2, period / 2, dot / 2, 0, Math.PI * 2);
+    pctx.fill();
+
+    texturePattern = ctx.createPattern(texturePatternCanvas, 'repeat');
   }
 
   function ingrColors(ingr) {
@@ -128,10 +171,10 @@ export function createRenderer(canvas, callbacks = {}) {
     waitX = config.WAIT_POS_X_RATIO * W;
     waitY = config.WAIT_POS_Y_RATIO * H;
     markersY = conveyorBottom + config.MARKERS_OFFSET_RATIO * H;
+
+    texturePeriodPx = config.TEXTURE_PERIOD_RATIO * H;
   }
 
-  // cssW, cssH — ЛОГИЧЕСКИЕ размеры. dpr — pixel ratio.
-  // canvas.width/height УЖЕ выставлены resize.js (cssW*dpr).
   function resize(cssW, cssH, dpr = 1) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     W = cssW;
@@ -190,9 +233,9 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Конвейер
+  // Конвейер: градиент + текстура (offsetPx — в пикселях).
   // ----------------------------------------------------------
-  function drawConveyor(lx, isActive) {
+  function drawConveyor(lx, isActive, offsetPx) {
     const halfW = laneWidth / 2;
     const left = lx - halfW;
     const width = laneWidth;
@@ -205,6 +248,26 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.fillStyle = grad;
     ctx.fillRect(left, conveyorTop, width, height);
 
+    // текстура
+    if (config.TEXTURE_ENABLED && texturePattern && texturePeriodPx > 0) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left, conveyorTop, width, height);
+      ctx.clip();
+
+      ctx.translate(0, offsetPx);
+      ctx.fillStyle = texturePattern;
+      ctx.fillRect(
+        left,
+        conveyorTop - texturePeriodPx,
+        width,
+        height + texturePeriodPx * 2
+      );
+
+      ctx.restore();
+    }
+
+    // границы
     ctx.strokeStyle = COLORS.conveyorBorder;
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -319,7 +382,7 @@ export function createRenderer(canvas, callbacks = {}) {
   }
 
   // ----------------------------------------------------------
-  // Верхняя панель: фон + рецепт (иконки). Без текстов.
+  // Верхняя панель
   // ----------------------------------------------------------
   function drawRecipe(state) {
     const { recipe, collected } = state;
@@ -336,7 +399,6 @@ export function createRenderer(canvas, callbacks = {}) {
     ctx.lineTo(W, panelH);
     ctx.stroke();
 
-    // НИЖНЯЯ СТРОКА: рецепт
     const len = recipe.length;
     const leftBound  = hudPadding;
     const rightBound = W - hudPadding;
@@ -471,10 +533,33 @@ export function createRenderer(canvas, callbacks = {}) {
 
     drawRecipe(state);
 
+    // ---- текстура: один раз на кадр ----
+    let textureOffsetPx = 0;
+    if (config.TEXTURE_ENABLED && texturePattern && texturePeriodPx > 0) {
+      const ts = performance.now();
+      const dtSec = lastTextureTs ? (ts - lastTextureTs) / 1000 : 0;
+      lastTextureTs = ts;
+
+      // скорость ингредиентов в долях H/сек (не зависит от H)
+      const speedFracPerSec =
+        (config.BASE_FALL_SPEED / 720) *
+        (1 + (state.pizzasMade || 0) * config.SPEED_PER_PIZZA);
+
+      // скорость текстуры — пропорционально, но медленнее (SYNC_FACTOR)
+      const textureFracPerSec = speedFracPerSec * config.TEXTURE_SYNC_FACTOR;
+
+      // периоды в секунду
+      const periodsPerSec = textureFracPerSec / config.TEXTURE_PERIOD_RATIO;
+
+      textureOffset = (textureOffset + dtSec * periodsPerSec) % 1;
+      textureOffsetPx = textureOffset * texturePeriodPx;
+    }
+
     for (let l = 0; l < config.LANE_COUNT; l++) {
       drawConveyor(
         laneX[l],
-        l === state.currentPos && !state.over && !state.pizzaAnim
+        l === state.currentPos && !state.over && !state.pizzaAnim,
+        textureOffsetPx
       );
     }
 
@@ -501,6 +586,13 @@ export function createRenderer(canvas, callbacks = {}) {
       dishY = conveyorBottom + 40;
     }
     drawBowl(dishX, dishY, state.bowlFlash);
+
+    if (state.currentPos === 3) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.font = `bold 12px ${HUD_FONT}`;
+      ctx.textAlign = 'center';
+      ctx.fillText('ОЖИДАНИЕ', dishX, dishY + 55);
+    }
 
     if (state.pizzaAnim) drawPizzaAnim(state.pizzaAnim);
     if (state.over) drawGameOver(state);

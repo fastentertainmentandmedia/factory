@@ -38,6 +38,15 @@
   --color-conveyor-active:    rgba(255, 200, 0, 0.8);
   --color-conveyor-active-bg: rgba(255, 220, 100, 0.35);
 
+  /* В блоке :root, рядом с --color-conveyor-* : */
+
+  --color-conveyor-bg:        #d8d8d8;
+  --color-conveyor-bg-bottom: #c4c4c4;
+  --color-conveyor-border:    #a0a0a0;
+  --color-conveyor-texture:   #000000;   /* ← цвет точек; alpha — в config.TEXTURE_ALPHA */
+  --color-conveyor-active:    rgba(255, 200, 0, 0.8);
+  --color-conveyor-active-bg: rgba(255, 220, 100, 0.35);
+
   /* ---------- Чаша ---------- */
   --color-bowl-body:      #d8d8d8;
   --color-bowl-rim:       #e8e8e8;

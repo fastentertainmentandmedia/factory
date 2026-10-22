@@ -38,7 +38,7 @@
 
   /* ---------- Размеры ключевых блоков ---------- */
   --wrapper-pad:  clamp(4px, 1vw, 10px);
-  --header-h: clamp(36px, 9vw, 52px);
+  --header-h: clamp(48px, 11vw, 80px);
   --dpad-size:    clamp(150px, 38vw, 200px);
   --bottom-pad-y: 6px;
   --bottom-h:     calc(var(--dpad-size) + var(--bottom-pad-y) * 2);
